@@ -1,0 +1,9 @@
+# Synthetic lesion bank (paper Section 4.1). Contrast levels are set per sequence
+# from the fastMRI+ interquartile range once the annotations are analysed.
+volumes_mm3: [1, 5, 10, 27]
+contrast_levels_per_sequence: null   # filled by scripts/02_bank.py from fastMRI+ statistics
+contrast_signs: {FLAIR: [+1], T2: [+1], T1: [-1]}
+sites: [white_matter, deep_grey, cortical_ribbon]
+taper_px: 1.0
+roi_size_px: 32
+exclude_annotated_slices: true

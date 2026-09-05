@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it as below."
+title: "The Causal Safety Audit: Code Repository"
+abstract: >-
+  Implementation of the Causal Safety Audit for deep-learning MRI
+  reconstruction: additive counterfactual lesion insertion through the real
+  multi-coil forward operator, filtered null-space projectors and transfer
+  statistics, a channelised Hotelling observer readout, pre-specified erasure
+  definitions, and the statistical analysis plan. No experiment has been run
+  with this code at version 0.1.0.
+version: 0.1.0
+date-released: 2026-09-05
+url: "https://github.com/dmai287/csa-audit"
+repository-code: "https://github.com/dmai287/csa-audit"
+authors:
+  - family-names: Mai
+    given-names: Dat Tat
+    affiliation: "School of Science, Engineering & Technology, RMIT University Vietnam, Ho Chi Minh City, Vietnam"
+    orcid: "https://orcid.org/0009-0006-5256-5646"
+  - family-names: Pham
+    given-names: Thai Viet
+    affiliation: "School of Computing Technologies, RMIT University, Melbourne, VIC, Australia"
+    orcid: "https://orcid.org/0009-0003-3707-5081"
+  - family-names: Nguyen
+    given-names: Thi
+    affiliation: "VinFuture"
+license: MIT
+keywords:
+  - "MRI reconstruction"
+  - "deep learning"
+  - "counterfactual"
+  - "null space"
+  - "model observer"
+  - "hallucination"

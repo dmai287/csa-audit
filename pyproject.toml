@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "csa-audit"
+version = "0.1.0"
+description = "The Causal Safety Audit: counterfactual stress-testing for deep-learning MRI reconstruction"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+  {name = "Dat Tat Mai"},
+  {name = "Thai Viet Pham"},
+  {name = "Thi Nguyen"},
+]
+dependencies = [
+  "numpy>=1.22",
+  "scipy>=1.6",
+  "scikit-image>=0.19",
+  "h5py>=2.10",
+  "pandas>=1.5",
+  "pyyaml>=6.0",
+  "statsmodels>=0.13",
+]
+
+[project.optional-dependencies]
+recon = ["torch>=2.0", "fastmri>=0.3", "sigpy>=0.1.25"]
+test = ["pytest>=7"]
+tables = ["pyarrow>=10"]
+
+[tool.setuptools.packages.find]
+include = ["csa*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

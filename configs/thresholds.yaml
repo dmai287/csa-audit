@@ -1,0 +1,16 @@
+# Pre-registered thresholds. Values are null until the OSF pre-registration is
+# deposited; the deposited PDF and its hash in prereg/ are the source of truth.
+z_det: null          # reference detectability required for a lesion to count (Eq. erasure)
+z_miss: null         # reconstruction detectability below which the lesion is missed
+z_fs: null           # false-structure threshold in background sd units
+pi0: null            # silent erasure rate of clinical relevance (H1)
+psnr_interval_level: 0.95
+lambda_rule: "sigma_eta^2 / var(|X|)"
+lambda_sensitivity_decades: 1
+equivalence_margin_smd: 0.2
+auc_equivalence_interval: [0.45, 0.55]
+auc_floor_h3: 0.80
+alpha_family: 0.05
+multiplicity: holm
+pilot_subjects: 20
+ci_half_width_rate: 0.02

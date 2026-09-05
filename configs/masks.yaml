@@ -1,0 +1,5 @@
+# Undersampling conditions (paper Section 4.2). Primary: equispaced; secondary: random.
+accelerations: [4, 6, 8]
+center_fraction: {4: 0.08, 6: 0.06, 8: 0.04}
+mask_types: [equispaced, random]
+random_mask_seeds: [0, 1, 2]

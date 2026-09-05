@@ -1,0 +1,35 @@
+# Never commit credentials or local state
+.env
+*.env
+*token*
+*credential*
+
+# Data, model weights and outputs never enter the repository
+data/
+outputs/
+checkpoints/
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+
+# Publisher-copyright material must not be redistributed
+*.pdf
+!prereg/*.pdf
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
