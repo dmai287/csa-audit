@@ -10,8 +10,16 @@ abstract: >-
   with this code at version 0.1.0.
 version: 0.1.0
 date-released: 2026-09-05
+doi: 10.5281/zenodo.22648224
 url: "https://github.com/dmai287/csa-audit"
 repository-code: "https://github.com/dmai287/csa-audit"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22648224
+    description: "Concept DOI: always resolves to the latest version."
+  - type: doi
+    value: 10.5281/zenodo.22648225
+    description: "Version DOI for release v0.1.0."
 authors:
   - family-names: Mai
     given-names: Dat Tat
