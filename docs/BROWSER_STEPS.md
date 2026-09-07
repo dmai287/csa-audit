@@ -1,11 +1,16 @@
 # Steps that need a browser (cannot be done from the command line)
 
-1. **Zenodo integration** (needed for the concept DOI in the paper's data
-   availability statement). Log in at https://zenodo.org with the GitHub
-   account `dmai287`, open https://zenodo.org/account/settings/github/, flip
-   the switch for `dmai287/csa-audit`. The repository must be public at the
-   time of the first GitHub release; Zenodo mints the DOI from that release.
-   Then paste the concept DOI into `CITATION.cff` (`doi:`) and the manuscript.
+1. **Zenodo integration** — **DONE 2026-09-08.** The repository was made
+   public, the Zenodo GitHub switch for `dmai287/csa-audit` was flipped, and
+   release `v0.1.0` was cut, which minted the DOIs below. The concept DOI is
+   recorded in `CITATION.cff` and in the manuscript's data availability
+   statement.
+
+   - Concept DOI (always the latest version): `10.5281/zenodo.22648224`
+   - Version DOI for `v0.1.0`: `10.5281/zenodo.22648225`
+
+   Every later release is archived automatically; cut a fresh tagged release
+   before submission so the archived code matches the reported analysis.
 
 2. **fastMRI data-use agreement.** Request access at
    https://fastmri.med.nyu.edu/ (brain multi-coil). The download links arrive

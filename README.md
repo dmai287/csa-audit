@@ -1,5 +1,8 @@
 # csa-audit
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22648224.svg)](https://doi.org/10.5281/zenodo.22648224)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Code for **The Causal Safety Audit: Counterfactual Stress-Testing for
 Deep-Learning MRI Reconstruction** (Mai, Pham, Nguyen; manuscript in
 preparation, target *Physics in Medicine & Biology*). Companion to the
@@ -97,3 +100,9 @@ ethics) are listed in `docs/BROWSER_STEPS.md`. Model notes are in
 
 Code under the MIT License. Cite via `CITATION.cff`. Data are fastMRI and
 fastMRI+, under their own terms.
+
+Releases are archived on Zenodo. Cite the concept DOI
+[`10.5281/zenodo.22648224`](https://doi.org/10.5281/zenodo.22648224), which
+always resolves to the most recent version; cite a version DOI (`v0.1.0` is
+[`10.5281/zenodo.22648225`](https://doi.org/10.5281/zenodo.22648225)) when a
+specific release must be pinned.
