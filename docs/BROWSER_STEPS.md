@@ -10,7 +10,11 @@
 2. **fastMRI data-use agreement.** Request access at
    https://fastmri.med.nyu.edu/ (brain multi-coil). The download links arrive
    by e-mail and expire; store the data outside this repository (`data/` is
-   git-ignored). fastMRI+ annotations are public at
+   git-ignored). Status 2026-09-08: links received (valid to 2026-12-07); a
+   resumable downloader runs on the external T9 drive at
+   `/Volumes/T9/fastMRI_brain/` (val, test_full and train batch 0 first; the
+   full set is 1.51 TB and exceeds the 1 TB drive, see its README.txt).
+   fastMRI+ annotations are public at
    https://github.com/microsoft/fastmri-plus (CSV files).
 
 3. **OSF pre-registration.** Create the registration at https://osf.io from
