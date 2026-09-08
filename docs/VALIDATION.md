@@ -68,3 +68,42 @@ From `Annotations/brain.csv` (8,213 rows, 997 files): sequences AXFLAIR
 "Lacunar infarct"; no hemorrhage label. Consequence: T2 hosts carry the
 synthetic (Case A) bank only, with default contrast levels recorded as
 `contrast_source = default`, and have no Case B counterpart.
+
+## 2026-09-08: measurement-side acquisition shift (`scripts/exp3_measurement_side.py`)
+
+VALIDATION, NOT EXPERIMENT 3'S RESULT. Four lesions (5, 10, 10, 27 mm^3) on
+two AXT2 slices, R = 8, twelve interventions on the acquisition at fixed
+anatomy and lesion; means over lesions. `kappa^2` is the measurement gain,
+`mu_lambda` the measured fraction under the noise-set filter.
+
+| Condition | `kappa^2` | `mu_lambda` | sampled fraction |
+| --- | --- | --- | --- |
+| `equispaced_offset_0` | 0.236 | 0.486 | 0.128 |
+| `equispaced_offset_1` | 0.236 | 0.486 | 0.125 |
+| `equispaced_offset_2` | 0.236 | 0.482 | 0.125 |
+| `equispaced_offset_3` | 0.236 | 0.475 | 0.125 |
+| `random_seed_0` | 0.240 | 0.422 | 0.128 |
+| `random_seed_1` | 0.215 | 0.407 | 0.134 |
+| `random_seed_2` | 0.239 | 0.467 | 0.125 |
+| `noise_x2` | 0.236 | 0.416 | 0.128 |
+| `noise_x4` | 0.236 | 0.351 | 0.128 |
+| `coils_first_half` | 0.236 | 0.396 | 0.128 |
+| `coils_second_half` | 0.236 | 0.493 | 0.128 |
+| `coils_alternate` | 0.236 | 0.448 | 0.128 |
+
+Reading.
+- Shifting the equispaced pattern by one to three lines leaves both statistics
+  essentially unchanged (mu 0.475 to 0.486).
+- Random masks at the same sampled fraction measure the lesion less and less
+  consistently (mu 0.41 to 0.47 across seeds).
+- Raising the noise level lowers `mu_lambda` (0.486 to 0.416 to 0.351 at x2 and
+  x4) while `kappa^2` is untouched: the gain is a property of the operator, the
+  measured fraction is a property of the operator and the noise, which is
+  what the lambda rule is for.
+- Coil subsets change `mu_lambda` (0.40 to 0.49) but not `kappa^2`, because the
+  subset maps are renormalised to `sum|S|^2 = 1`: with normalised maps the gain
+  depends on the mask and the lesion spectrum only, and coil geometry enters
+  through the conditioning of the operator, i.e. through `mu_lambda`. This is
+  worth a sentence in the manuscript when the two statistics are introduced.
+
+Cost: about 35 s per condition per lesion on CPU (one CG solve each).

@@ -44,7 +44,7 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
-    ch = pd.read_csv(args.characterization)
+    ch = pd.read_csv(args.characterization).rename(columns={"lambda": "lam"})  # "lambda" is a keyword; itertuples renames it
     ch = ch[(ch["acceleration"] == args.acceleration) & (ch["mask_type"] == "equispaced")]
     ch = ch.drop_duplicates(["file", "slice", "site_row", "site_col", "volume_mm3"])
     picks = ch.sample(n=min(args.n_lesions, len(ch)), random_state=args.seed)
@@ -57,7 +57,7 @@ def main():
         maps = np.load(os.path.join(args.maps_cache, f"{r.file}_s{int(r.slice):02d}.npz"))["maps"].astype(np.complex128)
         X = sense_combine(ifft2c(ks), maps)
         ssq = (np.abs(maps) ** 2).sum(0); support = ssq > 0.5
-        lam0 = float(r._asdict()["lambda"])
+        lam0 = float(r.lam)
         ell = lesion_perturbation(X, (int(r.site_row), int(r.site_col)), radius_px=float(r.radius_px), contrast=1.0, fill=float(r.fill))
         n_cols, n_coils = ks.shape[-1], ks.shape[0]
         conditions = []

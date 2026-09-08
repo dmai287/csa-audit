@@ -48,7 +48,7 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
-    ch = pd.read_csv(args.characterization)
+    ch = pd.read_csv(args.characterization).rename(columns={"lambda": "lam"})  # "lambda" is a keyword; itertuples renames it
     ch = ch[(ch["acceleration"] == args.acceleration) & (ch["mask_type"] == "equispaced")]
     ch = ch.drop_duplicates(["file", "slice", "site_row", "site_col", "volume_mm3"])
     rng = np.random.default_rng(args.seed)
@@ -64,7 +64,7 @@ def main():
         X = sense_combine(ifft2c(ks), maps)
         mask = equispaced_mask(ks.shape[-1], args.acceleration, default_center_fraction(args.acceleration))
         op = SenseOperator(maps, mask)
-        lam = float(r._asdict()["lambda"])
+        lam = float(r.lam)
         contrast = float(ch[(ch["file"] == r.file) & (ch["slice"] == r.slice)]["contrast"].median())
         ell = lesion_perturbation(X, (int(r.site_row), int(r.site_col)), radius_px=float(r.radius_px), contrast=contrast, fill=float(r.fill))
         y = op.undersample(ks); y_cf = y + op.forward(ell)
