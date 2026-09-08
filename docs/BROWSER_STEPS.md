@@ -15,10 +15,14 @@
 2. **fastMRI data-use agreement.** Request access at
    https://fastmri.med.nyu.edu/ (brain multi-coil). The download links arrive
    by e-mail and expire; store the data outside this repository (`data/` is
-   git-ignored). Status 2026-09-08: links received (valid to 2026-12-07); a
-   resumable downloader runs on the external T9 drive at
-   `/Volumes/T9/fastMRI_brain/` (val, test_full and train batch 0 first; the
-   full set is 1.51 TB and exceeds the 1 TB drive, see its README.txt).
+   git-ignored). Status 2026-09-08: **done for this paper's needs.** val 0-2,
+   test_full 0-2, train batch 0 and test 0-2 (514 GB, 10 files) downloaded and
+   verified on `/Volumes/T9/fastMRI_brain/archives/` (see its README.txt).
+   DICOM and train batches 1-9 were skipped (T9 has no more free space and
+   Paper 2's protocol does not need them: no model is retrained here, and
+   DICOM is vendor-reconstructed, not raw k-space). To fetch them anyway,
+   attach a larger drive, copy the folder there, and re-run
+   `download_fastmri.sh` before 2026-12-07 (link expiry).
    fastMRI+ annotations are public at
    https://github.com/microsoft/fastmri-plus (CSV files).
 
