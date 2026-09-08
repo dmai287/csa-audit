@@ -107,3 +107,36 @@ Reading.
   worth a sentence in the manuscript when the two statistics are introduced.
 
 Cost: about 35 s per condition per lesion on CPU (one CG solve each).
+
+## 2026-09-08: residual insensitivity on real acquisitions (`scripts/exp2_physics_demo.py`)
+
+VALIDATION, NOT EXPERIMENT 2'S RESULT. Eight lesions (1 to 27 mm^3) on two
+AXT2 slices, R = 8 equispaced, classical CG-SENSE at the noise-set lambda;
+reference known, so the reconstruction error `e` can be split into its
+filtered range and null-space parts.
+
+| Quantity (mean over 8 lesions) | Value |
+| --- | --- |
+| Share of error energy in the null space | 0.55 |
+| Relative residual of the reconstruction | 0.0822 |
+| Residual after removing the null-space error component | 0.0828 |
+| Residual after removing the range-space error component | 0.0868 |
+| Pure null-space edit: change in residual | 2.4e-08 |
+| Pure null-space edit: Proposition 1 bound `||A delta||/||Y||` | 1.2e-05 |
+| Pure null-space edit: `||A delta||/||delta||` | 0.010 |
+| CG-SENSE transfer `t_R`, `t_N` | 0.997, 0.042 |
+| Proposition 1 bound held | 8 of 8 |
+
+Reading. More than half of the classical reconstruction's error lives in the
+unmeasured subspace, and the k-space residual does not see it: deleting that
+component changes the residual by under one percent, while deleting the
+measured component moves the residual to the noise floor (the reconstruction
+had fitted part of the noise). A lesion-shaped edit confined to the numerical
+null space passes through `A` at about one percent of its norm and moves the
+residual by about 1e-8, three orders of magnitude inside the bound. This is
+Section 3.4 of the manuscript exhibited on measured data with a linear
+reconstructor; Experiment 2 proper repeats the decomposition on the learned
+models' erased pairs.
+
+Cost: about 3 minutes per lesion on CPU (two CG-SENSE reconstructions and
+three filtered-projector solves).

@@ -37,6 +37,16 @@ a GPU is required at experiment scale, and `P_lambda(ell)` / `mu_lambda`
 depend only on the lesion and the operator, not on the model, so they should
 be computed once per (lesion, acquisition) and reused across models.
 
+### Validation on real data, continued (2026-09-08, evening)
+
+- Experiment 2's operator-level content and Experiment 3's measurement-side
+  content demonstrated on real AXT2 slices with CG-SENSE; statistics machinery
+  checked by simulation. All in `docs/VALIDATION.md`. None of it applies the
+  pre-registered thresholds or scores an endpoint.
+- Selective extraction of 30 annotated FLAIR/T1 volumes from val batch 0 and a
+  detached chain that runs the full CPU stage (`scripts/run_cpu_stage.sh`) on
+  them when extraction completes.
+
 ### Changed
 
 - `csa/physics/espirit.py` now rejects input that is not `(coils, H, W)`. A
