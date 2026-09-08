@@ -2,7 +2,9 @@
 # from the fastMRI+ interquartile range once the annotations are analysed.
 volumes_mm3: [1, 5, 10, 27]
 contrast_levels_per_sequence: null   # filled by scripts/02_bank.py from fastMRI+ statistics
-contrast_signs: {FLAIR: [+1], T2: [+1], T1: [-1]}
+contrast_signs: {AXFLAIR: [+1], AXT2: [+1], AXT1: [-1], AXT1POST: [-1]}
+contrast_floor: 0.1          # bank never uses a smaller |contrast| than this
+min_focal_boxes: 10          # per sequence; below this the default levels are used and recorded as such
 sites: [white_matter, deep_grey, cortical_ribbon]
 taper_px: 1.0
 roi_size_px: 32

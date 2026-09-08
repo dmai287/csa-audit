@@ -70,9 +70,21 @@ def index_local_files(data_dir: str) -> dict:
     return idx
 
 
+FOCAL_LABELS = {"Nonspecific white matter lesion", "Nonspecific lesion", "Lacunar infarct", "Mass",
+                "Extra-axial mass", "Encephalomalacia", "Small vessel chronic white matter ischemic change"}
+MAX_FOCAL_SIDE_PX = 25   # about 17 mm at 0.7 mm/px; larger boxes are structural, not focal
+
+
 def appearance_stats(annotations: pd.DataFrame, file_index: dict, ring_px: int = 8) -> pd.DataFrame:
-    """For each annotated bounding box present locally: RSS magnitude in the box
-    vs. an annulus around it, and the resulting contrast ratio."""
+    """For each annotated bounding box present locally: RSS magnitude statistics of
+    the box against an annulus around it.
+
+    Two contrast measures are recorded. `contrast_mean` is the box mean against
+    the annulus mean, which a loose bounding box dilutes toward zero.
+    `contrast_core` is the signed deviation of the pixel at the 90th percentile
+    of |x - bg| / bg inside the box, i.e. the lesion core, and is the statistic
+    the bank uses. `focal` marks boxes whose label is a focal lesion and whose
+    longest side is at most MAX_FOCAL_SIDE_PX."""
     rows = []
     open_files = {}
     try:
@@ -98,14 +110,21 @@ def appearance_stats(annotations: pd.DataFrame, file_index: dict, ring_px: int =
             if not ring.any():
                 continue
             box_mag, bg_mag = float(img[box].mean()), float(img[ring].mean())
+            if bg_mag <= 0:
+                continue
+            dev = (img[box] - bg_mag) / bg_mag
+            k = int(np.argsort(np.abs(dev))[int(0.9 * (dev.size - 1))])
             rows.append({"file": r["file"], "slice": sl, "sequence": r["sequence"],
                         "label": r["label"], "width": w, "height": h,
+                        "focal": bool(r["label"] in FOCAL_LABELS and max(w, h) <= MAX_FOCAL_SIDE_PX),
                         "box_mag": box_mag, "background_mag": bg_mag,
-                        "contrast_ratio": (box_mag - bg_mag) / bg_mag if bg_mag > 0 else np.nan})
+                        "contrast_mean": (box_mag - bg_mag) / bg_mag,
+                        "contrast_core": float(dev[k])})
     finally:
         for f in open_files.values():
             f.close()
-    cols = ["file", "slice", "sequence", "label", "width", "height", "box_mag", "background_mag", "contrast_ratio"]
+    cols = ["file", "slice", "sequence", "label", "width", "height", "focal", "box_mag", "background_mag",
+            "contrast_mean", "contrast_core"]
     return pd.DataFrame(rows, columns=cols)
 
 
@@ -192,18 +211,36 @@ def main():
               "(AXFLAIR/AXT1/AXT1POST volumes -- see brain_file_list.csv).")
 
     contrast_by_seq, contrast_source = {}, {}
+    signs = bank_cfg.get("contrast_signs", {})
+    floor = float(bank_cfg.get("contrast_floor", 0.1))
+    min_focal = int(bank_cfg.get("min_focal_boxes", 10))
     for seq, g in (stats.groupby("sequence") if len(stats) else []):
-        q1, q3 = g["contrast_ratio"].quantile([0.25, 0.75])
-        contrast_by_seq[seq] = sorted({round(q1, 2), round((q1 + q3) / 2, 2), round(q3, 2)})
-        contrast_source[seq] = "fastmri_plus_iqr"
-        print(f"  {seq}: n={len(g)}, contrast IQR [{q1:.2f}, {q3:.2f}]")
+        f = g[g["focal"]]
+        print(f"  {seq}: {len(g)} boxes, {len(f)} focal; core |contrast| quartiles over focal boxes: "
+              + (", ".join(f"{v:.2f}" for v in f["contrast_core"].abs().quantile([0.25, 0.5, 0.75])) if len(f) else "n/a"))
+        if len(f) < min_focal:
+            continue
+        q1, q2, q3 = f["contrast_core"].abs().quantile([0.25, 0.5, 0.75])
+        sign = signs.get(seq, signs.get(seq.replace("AX", ""), [1]))
+        sign = float(sign[0]) if isinstance(sign, (list, tuple)) else float(sign)
+        levels = sorted({round(sign * max(q1, floor), 2), round(sign * max(q2, floor), 2), round(sign * max(q3, floor), 2)})
+        source = "fastmri_plus_focal_core_iqr"
+        if len(levels) < 3:
+            # quartiles collapsed (few boxes): keep the median, widen to x0.5 and x1.5 of it
+            levels = sorted({round(sign * max(0.5 * q2, floor), 2), round(sign * max(q2, floor), 2), round(sign * max(1.5 * q2, floor), 2)})
+            source = "fastmri_plus_focal_core_median_widened"
+        contrast_by_seq[seq] = levels
+        contrast_source[seq] = source
+        print(f"    -> bank contrast levels {levels} (sign {sign:+.0f}, floor {floor}, {source})")
     if args.default_contrasts:
         defaults = sorted(float(x) for x in args.default_contrasts.split(","))
         for stem in file_index:
             seq = sequence_of(stem)
             if seq not in contrast_by_seq:
-                contrast_by_seq[seq] = defaults
-                contrast_source[seq] = "default"
+                sign = signs.get(seq, signs.get(seq.replace("AX", ""), [1]))
+                sign = float(sign[0]) if isinstance(sign, (list, tuple)) else float(sign)
+                contrast_by_seq[seq] = sorted(round(sign * d, 2) for d in defaults)
+                contrast_source[seq] = "default_insufficient_focal_boxes" if len(stats) and (stats["sequence"] == seq).any() else "default_no_annotations"
         print(f"  default contrasts {defaults} applied to sequences without statistics: "
               f"{sorted(k for k, v in contrast_source.items() if v == 'default')}")
 
