@@ -140,3 +140,68 @@ models' erased pairs.
 
 Cost: about 3 minutes per lesion on CPU (two CG-SENSE reconstructions and
 three filtered-projector solves).
+
+## 2026-09-09: overnight CPU stage on 17 annotated val volumes (run `annotated_val0`)
+
+Integrity (17 volumes, none excluded) -> bank -> characterization of 984
+planned insertions (328 site-volume lesions x 3 accelerations; 82 slice units,
+4 workers, 4 h 05 min) -> Experiment 2 and 3 demonstrations. Outputs in
+`outputs/annotated_val0/`, figures in `outputs/annotated_val0/figures/`.
+
+### Model-independent measurement of the planned lesions
+
+Mean over lesions; the single-coil prediction is `1/R` = 0.250, 0.167, 0.125.
+
+| Volume | `kappa^2` R=4 / 6 / 8 | `mu_lambda` R=4 / 6 / 8 |
+| --- | --- | --- |
+| 1 mm^3 | 0.32 / 0.23 / 0.17 | 0.95 / 0.74 / 0.59 |
+| 5 mm^3 | 0.38 / 0.27 / 0.20 | 0.96 / 0.75 / 0.62 |
+| 10 mm^3 | 0.44 / 0.32 / 0.23 | 0.97 / 0.78 / 0.63 |
+| 27 mm^3 | 0.49 / 0.37 / 0.27 | 0.96 / 0.79 / 0.67 |
+
+Both statistics are monotone in volume and in acceleration, identical between
+FLAIR and T1 hosts to two decimals, and the gain sits 1.3x (1 mm^3) to 2.2x
+(27 mm^3, R=8) above the single-coil `1/R` without approaching one: the
+Section 3.4 claim, now measured on 328 real-acquisition lesions. CG note:
+median 80 iterations (the cap) with worst relative residual 1.2e-3; raise
+`--cg-maxiter` on the GPU run.
+
+### Reference detectability of the planned bank (the finding that matters)
+
+Cross-fitted CHO on the fully sampled reference, `z_det` = 3.0 as
+pre-registered. Only **3 %** of planned lesions reach `z_det` (1 mm^3: 0 %,
+5 mm^3: 4 %, 10 mm^3: 2 %, 27 mm^3: 5 %). Median `z_ref` is 0.1 to 0.6 for
+FLAIR at contrasts 0.12 to 0.36 and 0.5 to 2.1 for T1 at contrasts -0.3 to
+-1.0; reference `d'` is below 0.7 for every FLAIR cell and below 2.2 for T1.
+
+Why: fastMRI brain slices are 5 to 7.5 mm thick, so a sphere of 10 mm^3
+(radius 1.3 mm) fills 0.24 of the slice and a 27 mm^3 sphere 0.33; the
+effective in-plane contrast of a 0.24 FLAIR lesion is about 0.06. The
+manuscript's own motivating example is a 100 mm^3 lacunar infarct; the bank's
+1 to 27 mm^3 range sits below what this data can show even without
+undersampling. Under the pre-registered erasure definition (z_ref >= z_det
+required) the current bank would yield almost no eligible pairs.
+
+This is a pilot-stage finding to be resolved by the authors in the
+pre-registration's sizing addendum before any confirmatory run, not by the
+code. Options being quantified by `scripts/explore_reference_detectability.py`:
+extend the volume range upward (64 to 500 mm^3); higher contrast levels
+(lacunar-infarct boxes exist in fastMRI+ but not in these 17 volumes); or a
+site-matched observer, which would be a definitional change and must be
+declared as such. The thresholds themselves were not touched.
+
+### Experiment 2 demonstration on the annotated set (24 lesions, R=8, CG-SENSE)
+
+Bound held 24 of 24. Null-space share of the error 0.30 (0.21 to 0.52);
+deleting it moves the residual by 0.6 %, deleting the measured part moves it
+to the noise floor; a null-space lesion edit passes through `A` at 0.6 % of its
+norm and does not change the residual at the reported precision. `t_R` 0.999,
+`t_N` 0.08 (0.03 to 0.27).
+
+### Experiment 3 measurement side on the annotated set (12 lesions, R=8)
+
+`kappa^2` 0.225 under every condition except random masks; `mu_lambda` 0.61
+to 0.63 for equispaced offsets, noise x2 and x4, and coil subsets, but 0.49
+to 0.58 for random masks. On these volumes the noise interventions barely
+moved `mu_lambda` (they did on the AXT2 smoke set), which says the noise-set
+`lambda` is small relative to the measured singular values here.

@@ -47,6 +47,18 @@ be computed once per (lesion, acquisition) and reused across models.
   detached chain that runs the full CPU stage (`scripts/run_cpu_stage.sh`) on
   them when extraction completes.
 
+### Overnight CPU stage completed (2026-09-09 06:15)
+
+- Characterization of all 984 planned insertions, Experiment 2 and 3
+  demonstrations on the annotated set, validation figures
+  (`scripts/09_figures.py`). Headline: only 3 % of the planned bank is
+  detectable in the fully sampled reference under the pre-registered
+  `z_det`, because 1 to 27 mm^3 lesions are diluted by 5 to 7.5 mm slices.
+  Recorded in `docs/VALIDATION.md` for the sizing addendum; no threshold or
+  definition changed. `scripts/explore_reference_detectability.py` added to
+  quantify the options (larger volumes, higher contrasts, thin-slice
+  equivalent).
+
 ### Changed
 
 - `scripts/04_exp1.py` implemented: Algorithm 1 per pair for any reconstructor,
