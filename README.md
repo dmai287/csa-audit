@@ -47,7 +47,9 @@ csa/audit       one pair -> one row; erasure definitions
 csa/recon       zero-filled, CG-SENSE; adapters for VarNet, complex U-Net, diffusion
 csa/stats       cluster bootstrap, TOST equivalence, AUC intervals, pairs-per-cell rule
 csa/io          fastMRI HDF5 access and integrity report
-scripts/        smoke run, integrity check, bank, pilot, experiments, statistics
+scripts/        smoke run, integrity check, subset extraction, bank, bank
+                characterization (model-independent), physics demos, pilot,
+                experiments, statistics, statistics validation
 tests/          gates on synthetic data (no fastMRI files needed)
 configs/        masks, lesion bank, thresholds (null until pre-registered), models
 prereg/         the deposited pre-registration PDF and its hash
@@ -74,15 +76,41 @@ linear observer and scales linearly with contrast.
 
 ## Workflow
 
-1. `scripts/01_integrity.py` on the fastMRI brain multi-coil files: volumes with
-   zero-filled k-space are excluded, spacing and coil counts recorded.
-2. `scripts/02_bank.py` builds the lesion-bank manifest from fastMRI+.
-3. Deposit the pre-registration (see `prereg/`), copy thresholds into
-   `configs/thresholds.yaml`, never edit them afterwards.
-4. `scripts/03_pilot.py` on a 20-subject pilot fixes pairs per cell.
-5. `scripts/04_exp1.py` onwards produce the per-pair table with provenance
+CPU-only steps (this machine), in order:
+
+1. `scripts/extract_subset.py` streams a `.tar.xz` once and extracts only
+   wanted volumes, stopping early. The archives are single-stream xz, so any
+   listing or extraction is a full decompression pass; this keeps it to one.
+2. `scripts/01_integrity.py`: volumes with zero-filled k-space are excluded;
+   spacing and coil counts recorded.
+3. `scripts/02_bank.py`: per-sequence lesion appearance statistics from the
+   fastMRI+ boxes present locally, and the insertion manifest from
+   annotation-free slices. The three contrast levels share one site per
+   (slice, volume). Sequences without annotations (AXT2) take
+   `--default-contrasts`, recorded as `contrast_source=default`.
+4. `scripts/02b_characterize_bank.py`: the model-independent half of
+   Experiment 1: `kappa`, `mu_lambda` per site, volume and acceleration, and
+   the reference detectability `z_ref` from a cross-fitted observer on the
+   fully sampled reference. Needs no reconstructor. Multiprocess, resumable,
+   caches ESPIRiT maps.
+5. `scripts/exp2_physics_demo.py` and `scripts/exp3_measurement_side.py`:
+   the operator-level content of Experiments 2 and 3 with a classical
+   reconstructor, labelled as validation rather than results.
+6. `scripts/validate_stats.py`: simulation check of the cluster bootstrap,
+   the equivalence rule and the sample-size rule.
+
+GPU steps (deferred until a CUDA machine is available):
+
+7. `scripts/train_unet_complex.py`; the VarNet and diffusion adapters.
+8. `scripts/03_pilot.py` on the 20-subject pilot fixes pairs per cell and the
+   pre-registration's sizing addendum is posted.
+9. `scripts/04_exp1.py` onwards produce the per-pair table with provenance
    columns (git commit, config hash, checkpoint hash, data checksums).
-6. `scripts/08_stats.py` and `scripts/09_figures.py` read only that table.
+10. `scripts/08_stats.py` and `scripts/09_figures.py` read only that table.
+
+Order relative to the pre-registration: steps 1 to 6 touch no learned-model
+output and compute no erasure endpoint. Steps 8 onwards wait for the OSF
+deposit and the pilot, in that order.
 
 Steps that need a browser (Zenodo integration, fastMRI data agreement, OSF,
 ethics) are listed in `docs/BROWSER_STEPS.md`. Model notes are in

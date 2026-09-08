@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from csa.metrics.image import annulus  # noqa: E402
 from csa.physics.operator import ifft2c  # noqa: E402
+from csa.io.fastmri import pixel_spacing_mm  # noqa: E402
 
 SEQ_RE = re.compile(r"file_brain_(AX[A-Z0-9]+)_")
 
@@ -104,7 +105,8 @@ def appearance_stats(annotations: pd.DataFrame, file_index: dict, ring_px: int =
     finally:
         for f in open_files.values():
             f.close()
-    return pd.DataFrame(rows)
+    cols = ["file", "slice", "sequence", "label", "width", "height", "box_mag", "background_mag", "contrast_ratio"]
+    return pd.DataFrame(rows, columns=cols)
 
 
 def annotated_slices(annotations: pd.DataFrame) -> set:
@@ -113,8 +115,13 @@ def annotated_slices(annotations: pd.DataFrame) -> set:
 
 
 def build_manifest(file_index: dict, excluded: set, bank_cfg: dict, contrast_by_seq: dict,
-                   seed: int = 0) -> pd.DataFrame:
-    """Sample (file, slice, site, volume, contrast) combinations from lesion-free slices."""
+                   seed: int = 0, middle_slices: int = 0) -> pd.DataFrame:
+    """Sample (file, slice, site, volume, contrast) from lesion-free slices.
+
+    The three contrast levels share one site per (slice, volume), so the
+    model-independent quantities (measurement gain and fraction) are computed
+    once per site and reused; contrast only scales the perturbation.
+    """
     rng = np.random.default_rng(seed)
     rows = []
     for stem, path in sorted(file_index.items()):
@@ -125,16 +132,33 @@ def build_manifest(file_index: dict, excluded: set, bank_cfg: dict, contrast_by_
         with h5py.File(path, "r") as f:
             n_slices = f["kspace"].shape[0]
             shape = f["kspace"].shape[-2:]
-        for sl in range(n_slices):
+            header = f["ismrmrd_header"][()]
+        header = header.decode() if isinstance(header, bytes) else str(header)
+        try:
+            spacing = pixel_spacing_mm(header)
+        except Exception:
+            spacing = {}
+        slices = range(n_slices)
+        if middle_slices > 0:
+            lo = max((n_slices - middle_slices) // 2, 0)
+            slices = range(lo, min(lo + middle_slices, n_slices))
+        for sl in slices:
             if (stem, sl) in excluded:
                 continue
+            with h5py.File(path, "r") as f:
+                img = rss_slice(np.asarray(f["kspace"][sl]))
+            a = img / img.max()
+            candidates = np.argwhere((a > 0.25) & (a < 0.9))
+            if len(candidates) == 0:
+                continue
             for volume in bank_cfg["volumes_mm3"]:
+                row, col = (int(v) for v in candidates[rng.integers(len(candidates))])
                 for contrast in contrasts:
-                    row = int(rng.integers(shape[0] // 4, 3 * shape[0] // 4))
-                    col = int(rng.integers(shape[1] // 4, 3 * shape[1] // 4))
                     rows.append({"file": stem, "slice": sl, "sequence": seq,
                                 "site_row": row, "site_col": col,
-                                "volume_mm3": volume, "contrast": contrast})
+                                "volume_mm3": volume, "contrast": contrast,
+                                "spacing_x_mm": spacing.get("x"), "spacing_y_mm": spacing.get("y"),
+                                "thickness_mm": spacing.get("z"), "n_rows": shape[0], "n_cols": shape[1]})
     return pd.DataFrame(rows)
 
 
@@ -146,6 +170,10 @@ def main():
     ap.add_argument("--stats-out", default="outputs/appearance_stats.csv")
     ap.add_argument("--manifest-out", default="outputs/bank_manifest.csv")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--middle-slices", type=int, default=0, help="restrict to the central N slices per volume (0 = all)")
+    ap.add_argument("--default-contrasts", default="",
+                    help="comma-separated contrast levels for sequences with no fastMRI+ statistics "
+                         "(e.g. AXT2, which has no annotations); recorded as contrast_source=default")
     args = ap.parse_args()
 
     bank_cfg = yaml.safe_load(open(args.config))
@@ -163,14 +191,27 @@ def main():
               "pass --data pointing at a directory that includes annotated files "
               "(AXFLAIR/AXT1/AXT1POST volumes -- see brain_file_list.csv).")
 
-    contrast_by_seq = {}
-    for seq, g in stats.groupby("sequence"):
+    contrast_by_seq, contrast_source = {}, {}
+    for seq, g in (stats.groupby("sequence") if len(stats) else []):
         q1, q3 = g["contrast_ratio"].quantile([0.25, 0.75])
         contrast_by_seq[seq] = sorted({round(q1, 2), round((q1 + q3) / 2, 2), round(q3, 2)})
+        contrast_source[seq] = "fastmri_plus_iqr"
         print(f"  {seq}: n={len(g)}, contrast IQR [{q1:.2f}, {q3:.2f}]")
+    if args.default_contrasts:
+        defaults = sorted(float(x) for x in args.default_contrasts.split(","))
+        for stem in file_index:
+            seq = sequence_of(stem)
+            if seq not in contrast_by_seq:
+                contrast_by_seq[seq] = defaults
+                contrast_source[seq] = "default"
+        print(f"  default contrasts {defaults} applied to sequences without statistics: "
+              f"{sorted(k for k, v in contrast_source.items() if v == 'default')}")
 
     excluded = annotated_slices(annotations)
-    manifest = build_manifest(file_index, excluded, bank_cfg, contrast_by_seq, seed=args.seed)
+    manifest = build_manifest(file_index, excluded, bank_cfg, contrast_by_seq, seed=args.seed,
+                              middle_slices=args.middle_slices)
+    if len(manifest):
+        manifest["contrast_source"] = manifest["sequence"].map(contrast_source)
     os.makedirs(os.path.dirname(args.manifest_out) or ".", exist_ok=True)
     manifest.to_csv(args.manifest_out, index=False)
     print(f"bank manifest: {len(manifest)} planned insertions -> {args.manifest_out}")
