@@ -49,6 +49,21 @@ be computed once per (lesion, acquisition) and reused across models.
 
 ### Changed
 
+- `scripts/04_exp1.py` implemented: Algorithm 1 per pair for any reconstructor,
+  cross-fitted observers on reconstructions, erasure flags from the
+  pre-registered thresholds, resumable pass 1, `--observer-only` pass 2. Run
+  labels keep the classical CPU dry run apart from the confirmatory GPU run.
+  Smoke-tested on real AXT2 slices; under load one (file, slice, model, R) unit
+  takes about 26 minutes on CPU, so the overnight dry run is R = 8 only, two
+  slices per file, zero-filled and CG-SENSE.
+- `scripts/02_bank.py`: lesion-core contrast statistic over focal fastMRI+
+  labels replaces the box mean, which loose boxes diluted to zero. FLAIR
+  levels [0.12, 0.24, 0.36] from 14 focal boxes (median 0.24, quartiles
+  collapsed so widened to x0.5 / x1.5); T1 has 3 focal boxes and uses the
+  signed defaults, recorded as `default_insufficient_focal_boxes`.
+- Overnight chain on the 17 annotated val volumes: integrity -> bank ->
+  characterization (82 slice units, 4 workers) -> Experiment 2 and 3
+  demonstrations -> Experiment 1 classical dry run.
 - `csa/physics/espirit.py` now rejects input that is not `(coils, H, W)`. A
   4-D array was silently treated by sigpy as a single-coil 3-D volume and
   returned all-zero maps, which propagated NaNs through every downstream
