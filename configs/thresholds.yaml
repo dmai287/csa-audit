@@ -1,9 +1,29 @@
-# Pre-registered thresholds. Values are null until the OSF pre-registration is
-# deposited; the deposited PDF and its hash in prereg/ are the source of truth.
-z_det: null          # reference detectability required for a lesion to count (Eq. erasure)
-z_miss: null         # reconstruction detectability below which the lesion is missed
-z_fs: null           # false-structure threshold in background sd units
-pi0: null            # silent erasure rate of clinical relevance (H1)
+# Pre-registered thresholds. Fixed 2026-09-08 from convention and prior
+# literature, before any reconstruction was run and before any contact with
+# reconstruction output. The deposited PDF and its hash in prereg/ are the
+# source of truth; any change after deposit is a deviation and goes in
+# CHANGELOG.md with its reason.
+z_det: 3.0           # reference detectability required for a lesion to count (Eq. erasure)
+z_miss: 2.0          # reconstruction detectability below which the lesion is missed
+z_fs: 4.0            # false-structure threshold in background sd units
+pi0: 0.05            # silent erasure rate of clinical relevance (H1)
+
+# Rationale, recorded so the choices can be audited independently of the paper:
+#   z_det = 3.0   The CHO per-lesion z is a normal deviate; 3.0 is the
+#                 conventional "clearly visible" anchor and admits the small,
+#                 low-contrast lesions that constitute the primary endpoint.
+#                 The Rose criterion (5.0) was considered and rejected because
+#                 it would exclude most of the <= 10 mm^3 bank that H1 is about.
+#   z_miss = 2.0  Set strictly below z_det on purpose. Pairs falling in the
+#                 [2.0, 3.0) band are indeterminate and are counted as neither
+#                 erased nor preserved, so borderline pairs cannot inflate the
+#                 erasure rate.
+#   z_fs  = 4.0   False-structure candidates are screened over many connected
+#                 components per slice; 4 sd of the null-space background error
+#                 controls the per-image false-positive count.
+#   pi0   = 0.05  A silent erasure rate of 5% for sub-10 mm^3 lesions at
+#                 R >= 6 is taken as the floor of clinical relevance. This is a
+#                 domain judgement, not an estimate.
 psnr_interval_level: 0.95
 lambda_rule: "sigma_eta^2 / var(|X|)"
 lambda_sensitivity_decades: 1

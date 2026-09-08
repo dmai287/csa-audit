@@ -26,8 +26,25 @@
    fastMRI+ annotations are public at
    https://github.com/microsoft/fastmri-plus (CSV files).
 
-3. **OSF pre-registration.** Create the registration at https://osf.io from
-   the analysis plan (paper Section 4.8) and `configs/thresholds.yaml` once the
-   thresholds are chosen; save the PDF and its SHA-256 under `prereg/`.
+3. **OSF pre-registration.** Status 2026-09-08: **draft complete, awaiting the
+   author's Register click.** Draft ID `6aa026ffb45805cef97cb64a`
+   (https://osf.io/registries/drafts/6aa026ffb45805cef97cb64a/review), OSF
+   Preregistration schema, all eight sections filled and validating, with
+   `prereg/prereg_v1.pdf` attached. Registering is permanent and public, so it
+   is deliberately left to the author.
+
+   The four thresholds were fixed on 2026-09-08 from convention and prior
+   literature, before any reconstruction was run: `z_det` 3.0, `z_miss` 2.0,
+   `z_fs` 4.0, `pi0` 0.05. See `configs/thresholds.yaml` for the reasoning and
+   `prereg/README.md` for the deposit record.
+
+   The registration fixes the sample-size *rule* but not the realised N,
+   because `rho` is unknown until the 20-subject design pilot runs. It commits
+   to posting the realised pairs-per-cell as a dated OSF addendum **before**
+   any confirmatory reconstruction. Order: register v1 -> run the pilot ->
+   post the addendum -> run the confirmatory experiments.
+
+   After registering, record the OSF identifier and deposit date in
+   `prereg/README.md`.
 
 4. **Ethics** for the optional reader spot-check, through the RMIT HREC portal.

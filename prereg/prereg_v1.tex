@@ -1,0 +1,323 @@
+% =============================================================================
+% Pre-registration v1 - The Causal Safety Audit (Paper 2)
+% Deposited on OSF. This file is the source of the deposited PDF; the PDF and
+% its SHA-256 in this directory are the authoritative record.
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+
+\title{\textbf{Pre-registration v1}\\[0.3em]
+The Causal Safety Audit: Counterfactual Stress-Testing for\\
+Deep-Learning MRI Reconstruction}
+
+\author{Dat Tat Mai\thanks{School of Science, Engineering \& Technology, RMIT
+University Vietnam, Ho Chi Minh City, Vietnam. ORCID
+0009-0006-5256-5646.}
+\and Thai Viet Pham\thanks{School of Computing Technologies, RMIT University,
+Melbourne, VIC, Australia. ORCID 0009-0003-3707-5081.}
+\and Thi Nguyen\thanks{VinFuture.}}
+
+\date{2026-09-08}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\fbox{\parbox{0.92\textwidth}{\small
+\textbf{Status at deposit.} No reconstruction has been run. No pilot has been
+run. No experimental result of any kind exists at the time of this deposit.
+The thresholds in Section~\ref{sec:thresholds} were fixed from convention and
+prior literature, with no contact with reconstruction output. The code as of
+this deposit is archived at Zenodo concept DOI
+\href{https://doi.org/10.5281/zenodo.22648224}{10.5281/zenodo.22648224}
+(release \texttt{v0.1.0}, version DOI 10.5281/zenodo.22648225).
+}}
+\end{center}
+
+% -----------------------------------------------------------------------------
+\section{Study rationale and question}
+% -----------------------------------------------------------------------------
+
+Deep-learning MRI reconstruction is evaluated almost universally with global
+image scores (PSNR, SSIM) and with data-consistency residuals. Both are
+insensitive, by construction, to content the measurement did not constrain: a
+reconstruction may remove a small lesion and still report an excellent global
+score and a residual at the noise floor. This study asks whether that failure
+mode occurs at rates of clinical relevance, and whether the standard metrics
+detect it.
+
+The audit inserts a lesion on the \emph{measurement} side of the true
+multi-coil forward operator, $Y_{\mathrm{cf}} = Y + \mathbf{A}\ell$, so that
+the factual and counterfactual arms share the measured noise realisation,
+sampling mask and coil sensitivities exactly. Both arms are reconstructed with
+the same model and the same seed. Every lesion-attributable quantity is a
+within-pair difference.
+
+% -----------------------------------------------------------------------------
+\section{Hypotheses}
+% -----------------------------------------------------------------------------
+
+\begin{description}[leftmargin=3.2em,style=nextline]
+\item[\textbf{H1}] The silent erasure rate for lesions of
+$\le 10\,\mathrm{mm}^3$ at $R \ge 6$ exceeds the pre-specified rate of
+clinical relevance $\pi_0$ in at least one model family.
+\emph{Directional; one-sided.}
+
+\item[\textbf{H2}] Global PSNR and SSIM do not separate erased from preserved
+pairs: the standardised mean difference in each score lies within the
+equivalence margin, \emph{and} the AUC for classifying erasure from the score
+alone lies within the margin about $0.5$. \emph{Equivalence hypothesis; both
+conditions required.}
+
+\item[\textbf{H3}] ROI contrast and per-lesion detectability $z$ do separate
+erased from preserved pairs, with classification AUC above the pre-specified
+floor. \emph{Directional.}
+
+\item[\textbf{H4}] The false-structure count in the lesion-absent arm
+increases with acceleration $R$, and is highest for the generative family.
+\emph{Directional; trend and family contrast.}
+\end{description}
+
+H2 is a null result by construction. It is therefore tested as an equivalence
+hypothesis against margins fixed in advance. A merely non-significant
+difference will be reported as inconclusive and \emph{not} as support for H2.
+
+% -----------------------------------------------------------------------------
+\section{Design}
+% -----------------------------------------------------------------------------
+
+\paragraph{Data.} The multi-coil brain subset of fastMRI, which provides fully
+sampled raw $k$-space with coil sensitivities recoverable from the calibration
+region. Sequences are T1-weighted, T2-weighted and FLAIR axial slices at
+1.5\,T and 3\,T. Retrospective undersampling of already-processed magnitude
+images is excluded as a validity requirement. Lesion annotations come from
+fastMRI+; slices used for insertion are those with no annotation within the
+audited region.
+
+\paragraph{Synthetic lesion bank.} Spherical or ellipsoidal perturbations with
+volumes $1$, $5$, $10$ and $27\,\mathrm{mm}^3$; three contrast levels spanning
+the fastMRI+ interquartile range for the matching sequence; both signs of
+contrast where the sequence admits them (hyperintense on FLAIR and T2,
+hypointense on T1). Sites are drawn from white matter, deep grey matter and
+the cortical ribbon, avoiding ventricles and skull.
+
+\paragraph{Models under audit.} Three families, audited \emph{as released}:
+(i) End-to-End Variational Network (physics-based unrolled, learned data
+consistency); (ii) an image-domain complex U-Net baseline; (iii) a score-based
+diffusion reconstructor with a data-consistency step, evaluated with common
+random numbers across the two arms of each pair. No model is retrained on the
+lesion bank, and no lesion-bearing slice enters any training or calibration
+step.
+
+\paragraph{Conditions.} $R \in \{4, 6, 8\}$ with equispaced Cartesian masks;
+random masks as a secondary condition.
+
+\paragraph{Unit of analysis.} The lesion pair. Pairs are nested in slices and
+slices in subjects, and one host slice carries several lesions, so pairs are
+not independent.
+
+% -----------------------------------------------------------------------------
+\section{Pre-specified thresholds}
+\label{sec:thresholds}
+% -----------------------------------------------------------------------------
+
+These values are fixed by this deposit. They are normative choices drawn from
+convention and prior literature, not estimates from data. They are recorded
+machine-readably in \texttt{configs/thresholds.yaml} in the archived
+repository.
+
+\begin{center}
+\begin{tabular}{llp{8.4cm}}
+\toprule
+\textbf{Symbol} & \textbf{Value} & \textbf{Meaning and justification} \\
+\midrule
+$z_{\mathrm{det}}$ & $3.0$ &
+Reference detectability required for a lesion to enter the erasure analysis.
+The channelised Hotelling observer per-lesion $z$ is a normal deviate; $3.0$
+is the conventional ``clearly visible'' anchor. The Rose criterion ($5.0$) was
+considered and rejected: it would exclude most of the $\le 10\,\mathrm{mm}^3$
+bank that H1 concerns, and so would answer a different question. \\
+\addlinespace
+$z_{\mathrm{miss}}$ & $2.0$ &
+Reconstruction detectability below which the lesion counts as missed. Set
+strictly below $z_{\mathrm{det}}$ by design: pairs falling in the
+indeterminate band $[2.0, 3.0)$ are counted as \emph{neither} erased nor
+preserved, so borderline pairs cannot inflate the erasure rate. \\
+\addlinespace
+$z_{\mathrm{fs}}$ & $4.0$ &
+False-structure threshold, in standard deviations of the null-space error over
+background tissue. Candidates are screened over many connected components per
+slice; $4$\,sd controls the per-image false-positive count. A candidate must
+additionally have a volume of at least the smallest lesion in the bank. \\
+\addlinespace
+$\pi_0$ & $0.05$ &
+Silent erasure rate taken as the floor of clinical relevance for sub-$10\,
+\mathrm{mm}^3$ lesions at $R \ge 6$. A domain judgement, not an estimate. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Definition of erasure.} A pair is \emph{erased} when
+\begin{equation}
+z_i^{\mathrm{ref}} \ge z_{\mathrm{det}}
+\quad\text{and}\quad
+z_i^{\mathrm{recon}} < z_{\mathrm{miss}} .
+\end{equation}
+A pair is \emph{silently erased} when, in addition, the global PSNR of the
+lesion-present reconstruction lies within the central $95\%$ interval of PSNR
+over lesion-absent reconstructions of the same slice set under the same model
+and $R$, so that the reported score gives no indication that anything is
+missing.
+
+\paragraph{Other fixed analysis constants.}
+Equivalence margin on the standardised mean difference, $\pm 0.2$;
+AUC equivalence interval for H2, $[0.45, 0.55]$;
+AUC floor for H3, $0.80$;
+family-wise $\alpha = 0.05$ with Holm multiplicity correction;
+one-sided $\alpha = 0.025$ for H1;
+PSNR interval level $0.95$;
+regularisation rule $\lambda = \sigma_\eta^2 / \mathrm{var}(|X|)$ with a
+sensitivity analysis across one decade either side;
+target half-width of the $95\%$ interval for a rate of $\pi_0$, $0.02$.
+
+% -----------------------------------------------------------------------------
+\section{Statistical analysis plan}
+% -----------------------------------------------------------------------------
+
+\paragraph{Primary endpoint.} The silent erasure rate for lesions of
+$\le 10\,\mathrm{mm}^3$ at $R \ge 6$, per model.
+
+\paragraph{Dependence.} Every rate is estimated with a confidence interval
+from a cluster bootstrap that resamples \emph{subjects}. Every model-level
+contrast is fitted as a mixed-effects model with random intercepts for subject
+and slice. The paired structure of the two arms is preserved throughout.
+
+\paragraph{H1.} Tested against $\pi_0 = 0.05$ with a one-sided
+cluster-bootstrap test at $\alpha = 0.025$, model by model.
+
+\paragraph{H2.} For each of PSNR and SSIM, the standardised mean difference
+between erased and preserved pairs is tested with two one-sided tests against
+a margin of $\pm 0.2$, using cluster-robust standard errors; equivalence is
+declared only if both tests reject. The AUC of the global score as a
+classifier of erasure is estimated with a subject-level bootstrap interval and
+equivalence to $0.5$ is declared if that interval lies within $[0.45, 0.55]$.
+Both conditions are required.
+
+\paragraph{H3.} Compares the AUC of $z$, of ROI contrast and of
+$t_{\mathcal{N}}$ as classifiers of erasure against the floor of $0.80$ and
+against the AUC of PSNR, with subject-level bootstrap intervals for the paired
+difference.
+
+\paragraph{H4.} Fits the false-structure count as a mixed-effects Poisson
+model with $R$ as an ordered factor and family as a fixed effect, and tests
+the trend in $R$ and the family contrast.
+
+\paragraph{Multiplicity.} H1 to H4 form one family of four primary tests,
+controlled with the Holm procedure at a family-wise level of $0.05$. Analyses
+by lesion volume, contrast, site and sequence, the sensitivity analyses over
+$\lambda$ and observer internal noise, and the Case~B analysis on real
+annotated lesions are \emph{secondary} and are reported with intervals, not
+tests.
+
+\paragraph{Reporting.} All per-pair readouts are released as a table carrying
+subject, slice, site, volume, contrast, model, $R$, mask and seed identifiers,
+together with provenance columns (git commit, config hash, checkpoint hash,
+data checksums), so that every figure and every rate in the paper can be
+recomputed from it.
+
+% -----------------------------------------------------------------------------
+\section{Sample size and the design pilot}
+\label{sec:samplesize}
+% -----------------------------------------------------------------------------
+
+The lesion bank is sized so that the half-width of the $95\%$ interval for a
+rate of $\pi_0$ is at most $0.02$ after inflation by the design effect
+$1 + (m-1)\rho$, with $m$ the pairs per subject and $\rho$ the intra-subject
+correlation.
+
+$\rho$ is not known at the time of this deposit and will be estimated from a
+design pilot of 20 subjects. The following constraints are fixed \emph{now}:
+
+\begin{enumerate}[leftmargin=2em]
+\item The sizing \emph{rule} above is fixed by this deposit. Only the realised
+number of pairs per model-by-$R$ cell remains to be computed from it.
+\item The pilot estimates $\rho$ \textbf{and nothing else}. No endpoint, no
+erasure rate, no hypothesis test and no AUC will be computed on pilot data.
+\item The 20 pilot subjects are \textbf{excluded} from the confirmatory
+analysis set.
+\item The realised pairs-per-cell will be recorded in a dated addendum to this
+registration, posted \emph{before} any confirmatory reconstruction is run.
+\end{enumerate}
+
+This sequencing is deliberate. It places the timestamp on the thresholds and
+the analysis plan before any contact whatsoever with reconstruction output,
+rather than after a pilot has been seen.
+
+% -----------------------------------------------------------------------------
+\section{Exclusions, stopping and deviations}
+% -----------------------------------------------------------------------------
+
+\paragraph{Slice-level exclusions.} Slices carrying a fastMRI+ annotation
+within the audited region are excluded from insertion. Slices failing the
+integrity check (calibration region unusable, coil sensitivity estimation
+non-convergent) are excluded and counted.
+
+\paragraph{Pair-level exclusions.} Pairs whose reference detectability falls
+below $z_{\mathrm{det}}$ do not enter the erasure analysis: the lesion was not
+detectable even in the fully sampled reference, so its absence in the
+reconstruction is not attributable to the model. These are counted and
+reported.
+
+\paragraph{Indeterminate pairs.} Pairs with $z_i^{\mathrm{recon}}$ in
+$[z_{\mathrm{miss}}, z_{\mathrm{det}})$ are neither erased nor preserved.
+Their count is reported per cell.
+
+\paragraph{No optional stopping.} The number of pairs per cell is fixed before
+the confirmatory run and analysis is performed once, after the full run
+completes.
+
+\paragraph{Deviations.} Every departure from this document is recorded in
+\texttt{CHANGELOG.md} in the archived repository, with its date and reason,
+and reported in the paper.
+
+% -----------------------------------------------------------------------------
+\section{Outcome-neutral conditions}
+% -----------------------------------------------------------------------------
+
+The following must hold for the study to be interpretable, independently of
+which hypotheses are supported:
+
+\begin{enumerate}[leftmargin=2em]
+\item The forward operator passes its adjoint test.
+\item Lesion insertion passes the two-path equality test (insertion through
+the operator equals insertion in image space followed by the operator).
+\item The filtered projectors satisfy the closed-form and transfer-identity
+tests, and $t_{\mathcal{R}} = 1$ under hard data consistency.
+\item The channelised Hotelling observer does not exceed the ideal-observer
+bound.
+\item Both arms of every pair share the seed; seeds are varied across
+replicates.
+\end{enumerate}
+
+Failure of any of these is a defect to be fixed before the confirmatory run,
+not a result.
+
+% -----------------------------------------------------------------------------
+\section*{Materials}
+% -----------------------------------------------------------------------------
+
+Code: \url{https://github.com/dmai287/csa-audit}, archived at Zenodo concept
+DOI \href{https://doi.org/10.5281/zenodo.22648224}{10.5281/zenodo.22648224}.
+Data: fastMRI and fastMRI+, under their respective data-use terms. Derived
+lesion banks are released only if those terms permit; otherwise the generation
+script alone is released.
+
+\end{document}
