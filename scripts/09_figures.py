@@ -87,6 +87,23 @@ def fig_exp3(e3, out):
     fig.tight_layout(); fig.savefig(out, dpi=200); plt.close(fig)
 
 
+def fig_explore(ex, z_det, out):
+    """z_ref over the extended volume x contrast grid, thick slice vs thin-slice equivalent."""
+    seqs = sorted(ex.sequence.unique())
+    fig, axes = plt.subplots(2, len(seqs), figsize=(4.6 * len(seqs), 6.4), squeeze=False)
+    for j, seq in enumerate(seqs):
+        for i, (fill, name) in enumerate(((True, "thick slice (as acquired)"), (False, "thin-slice equivalent"))):
+            ax = axes[i][j]; g = ex[(ex.sequence == seq) & (ex.with_fill == fill)]
+            for c in sorted(g.contrast.unique(), key=abs):
+                gg = g[g.contrast == c].groupby("volume_mm3")["z_median"].mean()
+                ax.plot(gg.index, gg.values, marker="o", label=f"contrast {c:+.2f}")
+            ax.axhline(z_det, color="k", ls="--", lw=1)
+            ax.set_xscale("log"); ax.set_title(f"{seq}: {name}", fontsize=9); ax.grid(alpha=0.3)
+            ax.set_xlabel("lesion volume (mm$^3$)"); ax.set_ylabel("median $z_{ref}$"); ax.legend(fontsize=7)
+    fig.suptitle(f"Reference detectability over an extended grid (dashed: pre-registered $z_{{det}}$ = {z_det})", fontsize=9)
+    fig.tight_layout(); fig.savefig(out, dpi=200); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-dir", default="outputs/annotated_val0")
@@ -105,6 +122,9 @@ def main():
     p3 = os.path.join(args.run_dir, "exp3_measurement_side.csv")
     if os.path.exists(p3):
         fig_exp3(pd.read_csv(p3), os.path.join(out, "val_exp3_acquisition_shift.png"))
+    pe = os.path.join(args.run_dir, "explore_reference_detectability.csv")
+    if os.path.exists(pe):
+        fig_explore(pd.read_csv(pe), z_det, os.path.join(out, "val_explore_reference_detectability.png"))
     print("figures written to", out, ":", sorted(os.listdir(out)))
 
 

@@ -205,3 +205,61 @@ to 0.63 for equispaced offsets, noise x2 and x4, and coil subsets, but 0.49
 to 0.58 for random masks. On these volumes the noise interventions barely
 moved `mu_lambda` (they did on the AXT2 smoke set), which says the noise-set
 `lambda` is small relative to the measured singular values here.
+
+## 2026-09-09: reference detectability over an extended grid (`scripts/explore_reference_detectability.py`)
+
+Cross-fitted CHO on the fully sampled reference, 82 slices, 328 sites, 4,428 patches; cells show
+median `z_ref` and, in brackets, the fraction of lesions at or above the pre-registered `z_det` = 3.0.
+'thick slice' applies the partial-volume fill of the actual 5-7.5 mm slices; 'thin-slice equivalent' does not.
+
+**AXFLAIR, thick slice (as acquired)**
+
+| contrast | 10 mm^3 | 27 mm^3 | 64 mm^3 | 100 mm^3 | 200 mm^3 | 500 mm^3 |
+|---|---|---|---|---|---|---|
+| +0.24 | 0.3 (1%) | 0.4 (2%) | 0.5 (3%) | 0.5 (3%) | 0.6 (4%) | 1.0 (4%) |
+| +0.50 | 0.7 (4%) | 0.9 (5%) | 1.1 (7%) | 1.3 (8%) | 1.5 (15%) | 2.4 (28%) |
+| +1.00 | 1.7 (14%) | 2.0 (22%) | 2.5 (37%) | 2.9 (47%) | 3.3 (59%) | 4.9 (87%) |
+| +1.50 | 2.6 (36%) | 3.2 (58%) | 4.1 (75%) | 4.4 (77%) | 5.2 (84%) | 7.5 (94%) |
+
+**AXFLAIR, thin-slice equivalent**
+
+| contrast | 10 mm^3 | 27 mm^3 | 64 mm^3 | 100 mm^3 | 200 mm^3 | 500 mm^3 |
+|---|---|---|---|---|---|---|
+| +0.24 | 1.2 (3%) | 1.1 (4%) | 1.1 (4%) | 1.0 (5%) | 0.9 (6%) | 1.1 (4%) |
+| +0.50 | 2.4 (30%) | 2.3 (23%) | 2.2 (24%) | 2.2 (26%) | 2.1 (27%) | 2.5 (32%) |
+| +1.00 | 5.1 (92%) | 4.8 (87%) | 4.7 (86%) | 4.7 (83%) | 4.5 (83%) | 5.1 (89%) |
+| +1.50 | 7.9 (98%) | 7.5 (96%) | 7.3 (96%) | 7.1 (94%) | 7.1 (91%) | 7.9 (96%) |
+
+**AXT1, thick slice (as acquired)**
+
+| contrast | 10 mm^3 | 27 mm^3 | 64 mm^3 | 100 mm^3 | 200 mm^3 | 500 mm^3 |
+|---|---|---|---|---|---|---|
+| -0.30 | 0.8 (0%) | 0.9 (0%) | 0.9 (1%) | 1.0 (0%) | 1.1 (1%) | 1.7 (2%) |
+| -0.60 | 1.5 (4%) | 1.7 (7%) | 1.7 (6%) | 1.7 (8%) | 2.1 (16%) | 3.2 (55%) |
+| -1.00 | 2.3 (25%) | 2.8 (41%) | 2.8 (40%) | 2.8 (37%) | 3.4 (56%) | 5.2 (95%) |
+
+**AXT1, thin-slice equivalent**
+
+| contrast | 10 mm^3 | 27 mm^3 | 64 mm^3 | 100 mm^3 | 200 mm^3 | 500 mm^3 |
+|---|---|---|---|---|---|---|
+| -0.30 | 1.8 (1%) | 1.7 (0%) | 1.5 (0%) | 1.4 (0%) | 1.4 (1%) | 1.7 (2%) |
+| -0.60 | 3.3 (68%) | 3.1 (60%) | 2.7 (36%) | 2.4 (26%) | 2.5 (26%) | 3.2 (63%) |
+| -1.00 | 5.3 (97%) | 5.1 (96%) | 4.6 (89%) | 4.1 (84%) | 4.1 (83%) | 5.4 (97%) |
+
+Reading.
+- Contrast, not volume, governs reference detectability on this data. At the fastMRI+-derived FLAIR
+  contrast of 0.24 no volume up to 500 mm^3 is detectable on thick slices (<= 6 %); at contrast 1.0
+  a majority of lesions of 200 mm^3 and above are, and at 1.5 a majority of 64 mm^3 and above.
+- Partial volume is the mechanism: the thin-slice equivalent at contrast 1.0 puts 83 to 92 % of FLAIR
+  lesions of every volume above `z_det`, and 83 to 97 % of T1 lesions at contrast -1.0.
+- The manuscript's motivating 100 mm^3 lacunar infarct on a 7.5 mm slice (fill 0.51) reaches
+  `z_ref` 2.9 at contrast 1.0 and 4.5 at 1.5.
+- Without dilution `z_ref` is nearly flat in volume at fixed contrast: with anatomy-dominated
+  background covariance, a larger lesion also sees more background variability at its own scale.
+
+Implication for the sizing addendum (the authors' decision): the 0.24 FLAIR level came from
+'nonspecific white matter lesion' boxes, not from the acute-stroke lesions the paper is about;
+fastMRI+ holds 113 'Lacunar infarct' boxes, none in these 17 volumes. Deriving the contrast levels
+from those boxes, and moving the bank's volumes to 27-200 mm^3 with 10 mm^3 retained as a
+sub-threshold control, would give a bank whose majority is detectable in the reference. Both are
+bank-parameter choices the pre-registration leaves to the addendum; `z_det` itself is unchanged.
