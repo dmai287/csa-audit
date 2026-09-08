@@ -1,12 +1,15 @@
 # Models under audit (paper Section 4.2). Paths are local; weights are never committed.
 e2e_varnet:
-  checkpoint: checkpoints/varnet_brain_leaderboard_state_dict.pt
-  note: "public fastMRI brain leaderboard weights; complex output must be exposed (docs/MODELS.md)"
+  checkpoint: /Volumes/T9/fastMRI_brain/checkpoints/varnet_brain_leaderboard_state_dict.pt
+  source: https://dl.fbaipublicfiles.com/fastMRI/trained_models/varnet/brain_leaderboard_state_dict.pt
+  downloaded: 2026-09-08
+  note: "public fastMRI brain leaderboard weights (Meta AI public file server); complex output must be exposed (docs/MODELS.md)"
 unet_complex:
   checkpoint: checkpoints/unet_complex_brain.pt
-  note: "two-channel U-Net trained on the standard fastMRI brain split; no lesion slice in training"
+  note: "two-channel U-Net; TRAIN THIS from train_batch_0 (scripts/train_unet_complex.py, not yet written); no lesion slice in training"
 diffusion_langevin:
   repo: "https://github.com/utcsilab/csgm-mri-langevin"
-  checkpoint: checkpoints/csgm_brain.pt
-  note: "weights trained on fastMRI brain multi-coil; common random numbers across arms"
+  checkpoint: /Volumes/T9/fastMRI_brain/checkpoints/ncsnv2-mri-mvue/logs/mri-mvue/checkpoint_100000.pth
+  downloaded: 2026-09-08
+  note: "single unconditional NCSNv2 score model (not separate per-contrast weights despite the repo's brain_T2/T1/FLAIR config names, which select sampling config only); also needs BART for coil-sensitivity estimation, and Jalal et al.'s csgm-mri-langevin repo cloned for the sampler code; common random numbers across arms"
 seeds: [0, 1, 2]
