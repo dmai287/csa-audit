@@ -92,6 +92,7 @@ def process_unit(job):
         key = (int(spec["site_row"]), int(spec["site_col"]), float(spec["volume_mm3"]))
         seen.setdefault(key, []).append(float(spec["contrast"]))
     out_rows, patches = [], []
+    n_zero_gain = 0
     for (row, col, vol), contrasts in seen.items():
         c_info = char.get((row, col, vol))
         if c_info is None:
@@ -103,6 +104,10 @@ def process_unit(job):
         except ValueError:
             continue
         if not np.any(ell_u):
+            continue
+        Al_u = op.forward(ell_u)
+        if real_inner(Al_u, Al_u) == 0.0:
+            n_zero_gain += 1  # site outside the coil-map support: nothing reaches k-space
             continue
         disc = soft_disc(X.shape, site, rpx, taper_px=0.0) > 0.5
         ring = annulus(X.shape, site, rpx + 2, rpx + 8) & support
@@ -126,7 +131,7 @@ def process_unit(job):
             Xh_cf = Xh + dX
             X_cf = X + ell
             y_cf = y + op.forward(ell)
-            Al, Ad = op.forward(ell), op.forward(dX)
+            Al, Ad = c * Al_u, op.forward(dX)
             t_R = real_inner(Ad, Al) / real_inner(Al, Al)
             Ql = c * Ql_u
             t_N = real_inner(QdX, Ql) / real_inner(Ql, Ql)
@@ -157,8 +162,31 @@ def process_unit(job):
                         "sequence": rows_spec[0]["sequence"], "site_row": int(r_), "site_col": int(c_), "volume_mm3": -1.0,
                         "contrast": 0.0, "radius_px": 0.0, "kind": "absent", "patch": extract_roi(Xh, (r_, c_), roi).astype(np.float32)})
     for rr in out_rows:
-        rr["unit_seconds"] = round(time.time() - t_unit, 1)
-    return out_rows, patches
+        rr["unit_seconds"] = round(time.time() - t_unit, 1); rr["sites_skipped_zero_gain"] = n_zero_gain
+    return out_rows, patches, f"{stem}_s{sl:02d}_{model}_R{R}_{mt}"
+
+
+def unit_path(unit_dir, key):
+    return os.path.join(unit_dir, key + ".npz")
+
+
+def save_unit(unit_dir, key, rows, patches, roi):
+    os.makedirs(unit_dir, exist_ok=True)
+    np.savez_compressed(unit_path(unit_dir, key), rows=json.dumps(rows),
+                        meta=json.dumps([{k: v for k, v in p.items() if k != "patch"} for p in patches]),
+                        patch=np.stack([p["patch"] for p in patches]) if patches else np.zeros((0, roi, roi), np.float32))
+
+
+def load_units(unit_dir):
+    rows, patches = [], []
+    for f in sorted(os.listdir(unit_dir)) if os.path.isdir(unit_dir) else []:
+        if not f.endswith(".npz"):
+            continue
+        z = np.load(os.path.join(unit_dir, f), allow_pickle=False)
+        rows.extend(json.loads(str(z["rows"])))
+        for i, m in enumerate(json.loads(str(z["meta"]))):
+            m = dict(m); m["patch"] = z["patch"][i]; patches.append(m)
+    return rows, patches
 
 
 def fit_recon_observers(patches, rows, roi, seed=0):
@@ -229,23 +257,20 @@ def main():
     args = ap.parse_args()
 
     out_csv = os.path.join(args.out_dir, f"exp1_{args.label}.csv")
-    patches_out = os.path.join(args.out_dir, f"exp1_{args.label}_patches.npz")
+    unit_dir = os.path.join(args.out_dir, f"exp1_{args.label}_units")
     dp_out = os.path.join(args.out_dir, f"exp1_{args.label}_dprime.csv")
     thr = yaml.safe_load(open(args.thresholds))
     if args.observer_only:
-        rows = pd.read_csv(out_csv).drop(columns=[c for c in ("z_recon", "erased", "indeterminate", "silently_erased") if c in pd.read_csv(out_csv, nrows=1).columns]).to_dict("records")
-        df, dp = pass2(rows, load_patch_store(patches_out), args, thr)
+        rows, patches = load_units(unit_dir)
+        df, dp = pass2(rows, patches, args, thr)
         df.to_csv(out_csv, index=False); dp.to_csv(dp_out, index=False)
         report(df, dp, args, out_csv, dp_out); return
     man = pd.read_csv(args.manifest)
     char = pd.read_csv(args.characterization)
     files = {os.path.splitext(f)[0]: os.path.join(dp, f) for dp, _, fs in os.walk(args.data) for f in fs if f.endswith(".h5")}
-    done = set()
-    if os.path.exists(out_csv):
-        prev = pd.read_csv(out_csv); done = set(zip(prev["file"], prev["slice"], prev["model"], prev["acceleration"], prev["mask_type"]))
     a = {"maps_cache": args.maps_cache, "cg_tol": args.cg_tol, "cg_maxiter": args.cg_maxiter, "roi": args.roi,
          "extra_absent": args.extra_absent, "seed": args.seed}
-    jobs = []
+    jobs, n_done = [], 0
     for stem, g_file in man.groupby("file"):
         if stem not in files:
             continue
@@ -260,51 +285,31 @@ def main():
             for model in args.models.split(","):
                 for R in (int(x) for x in args.accelerations.split(",")):
                     for mt in args.mask_types.split(","):
-                        if (stem, sl, model, R, mt) in done:
-                            continue
+                        if os.path.exists(unit_path(unit_dir, f"{stem}_s{int(sl):02d}_{model}_R{R}_{mt}")):
+                            n_done += 1; continue
                         cr = char_rows[(char_rows["acceleration"] == R) & (char_rows["mask_type"] == mt)]
                         if cr.empty:
                             continue
                         jobs.append((files[stem], int(sl), model, R, mt, rows_spec, cr.to_dict("records"), a))
     if args.limit_units:
         jobs = jobs[:args.limit_units]
-    print(f"[{args.label}] {len(jobs)} units (file, slice, model, R, mask) with {args.workers} workers; {len(done)} already done", flush=True)
+    print(f"[{args.label}] {len(jobs)} units (file, slice, model, R, mask) with {args.workers} workers; {n_done} already done", flush=True)
     if any(j[2] not in LINEAR for j in jobs):
         print("NOTE: learned models requested; make sure the pre-registration's order (OSF deposit, pilot, addendum) has been honoured.", flush=True)
 
-    all_rows, all_patches = [], []
     t0 = time.time()
-    with Pool(args.workers) as pool:
-        for i, (rows, patches) in enumerate(pool.imap_unordered(process_unit, jobs), 1):
-            all_rows.extend(rows); all_patches.extend(patches)
-            if rows:
-                pd.DataFrame(all_rows).to_csv(out_csv + ".partial", index=False)
-            print(f"[{time.time()-t0:6.0f}s] unit {i}/{len(jobs)}: {rows[0]['file'] if rows else '-'} s{rows[0]['slice'] if rows else '-'} "
-                  f"{rows[0]['model'] if rows else '-'} R{rows[0]['acceleration'] if rows else '-'} ({len(rows)} pairs, {rows[0]['unit_seconds'] if rows else 0}s)", flush=True)
+    if jobs:
+        with Pool(args.workers) as pool:
+            for i, (rows, patches, key) in enumerate(pool.imap_unordered(process_unit, jobs), 1):
+                save_unit(unit_dir, key, rows, patches, args.roi)
+                print(f"[{time.time()-t0:6.0f}s] unit {i}/{len(jobs)}: {key} ({len(rows)} pairs, "
+                      f"{rows[0]['unit_seconds'] if rows else 0}s, {rows[0]['sites_skipped_zero_gain'] if rows else '-'} sites skipped)", flush=True)
 
-    # persist pass 1 before the observer fit
+    all_rows, all_patches = load_units(unit_dir)
     os.makedirs(args.out_dir, exist_ok=True)
-    if os.path.exists(out_csv):
-        all_rows = pd.read_csv(out_csv).to_dict("records") + all_rows
-    if os.path.exists(patches_out):
-        all_patches = load_patch_store(patches_out) + all_patches
-    np.savez_compressed(patches_out, meta=json.dumps([{k: v for k, v in p.items() if k != "patch"} for p in all_patches]),
-                        patch=np.stack([p["patch"] for p in all_patches]) if all_patches else np.zeros((0, args.roi, args.roi), np.float32))
-    pd.DataFrame(all_rows).to_csv(out_csv, index=False)
-    if os.path.exists(out_csv + ".partial"):
-        os.remove(out_csv + ".partial")
-
     df, dp = pass2(all_rows, all_patches, args, thr)
     df.to_csv(out_csv, index=False); dp.to_csv(dp_out, index=False)
     report(df, dp, args, out_csv, dp_out)
-
-
-def load_patch_store(path):
-    z_old = np.load(path, allow_pickle=False)
-    out = []
-    for i, m in enumerate(json.loads(str(z_old["meta"]))):
-        m = dict(m); m["patch"] = z_old["patch"][i]; out.append(m)
-    return out
 
 
 def pass2(all_rows, all_patches, args, thr):
