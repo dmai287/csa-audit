@@ -59,6 +59,16 @@ be computed once per (lesion, acquisition) and reused across models.
   quantify the options (larger volumes, higher contrasts, thin-slice
   equivalent).
 
+### Experiment 1 classical dry run completed (2026-09-09 09:20)
+
+- 714 pairs, zero-filled and CG-SENSE at R = 8, on 15 annotated volumes.
+  PSNR changes by at most 0.023 dB from the lesion and stays inside the
+  lesion-free interval in 94 % of pairs; classical reconstruction retains
+  0 to 69 % of reference detectability; no pair passes the reference gate.
+  Validation entry, not a result. Dry-run figure added to `09_figures.py`.
+- `02_bank.py` restricts insertion sites to the ESPIRiT support when a cached
+  map exists (18 sites fell outside it in the dry run).
+
 ### Changed
 
 - `scripts/04_exp1.py` implemented: Algorithm 1 per pair for any reconstructor,

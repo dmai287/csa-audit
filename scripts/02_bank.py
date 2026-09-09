@@ -134,7 +134,7 @@ def annotated_slices(annotations: pd.DataFrame) -> set:
 
 
 def build_manifest(file_index: dict, excluded: set, bank_cfg: dict, contrast_by_seq: dict,
-                   seed: int = 0, middle_slices: int = 0) -> pd.DataFrame:
+                   seed: int = 0, middle_slices: int = 0, maps_cache: str = None) -> pd.DataFrame:
     """Sample (file, slice, site, volume, contrast) from lesion-free slices.
 
     The three contrast levels share one site per (slice, volume), so the
@@ -167,7 +167,11 @@ def build_manifest(file_index: dict, excluded: set, bank_cfg: dict, contrast_by_
             with h5py.File(path, "r") as f:
                 img = rss_slice(np.asarray(f["kspace"][sl]))
             a = img / img.max()
-            candidates = np.argwhere((a > 0.25) & (a < 0.9))
+            ok = (a > 0.25) & (a < 0.9)
+            cp = os.path.join(maps_cache, f"{stem}_s{sl:02d}.npz") if maps_cache else None
+            if cp and os.path.exists(cp):
+                m = np.load(cp)["maps"]; ok &= (np.abs(m) ** 2).sum(0) > 0.5  # inside the ESPIRiT support
+            candidates = np.argwhere(ok)
             if len(candidates) == 0:
                 continue
             for volume in bank_cfg["volumes_mm3"]:
@@ -190,6 +194,8 @@ def main():
     ap.add_argument("--manifest-out", default="outputs/bank_manifest.csv")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--middle-slices", type=int, default=0, help="restrict to the central N slices per volume (0 = all)")
+    ap.add_argument("--maps-cache", default="/Volumes/T9/fastMRI_brain/cache/maps",
+                    help="if a cached ESPIRiT map exists for a slice, insertion sites are restricted to its support")
     ap.add_argument("--default-contrasts", default="",
                     help="comma-separated contrast levels for sequences with no fastMRI+ statistics "
                          "(e.g. AXT2, which has no annotations); recorded as contrast_source=default")
@@ -246,7 +252,7 @@ def main():
 
     excluded = annotated_slices(annotations)
     manifest = build_manifest(file_index, excluded, bank_cfg, contrast_by_seq, seed=args.seed,
-                              middle_slices=args.middle_slices)
+                              middle_slices=args.middle_slices, maps_cache=args.maps_cache)
     if len(manifest):
         manifest["contrast_source"] = manifest["sequence"].map(contrast_source)
     os.makedirs(os.path.dirname(args.manifest_out) or ".", exist_ok=True)

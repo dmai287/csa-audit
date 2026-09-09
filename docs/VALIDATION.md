@@ -263,3 +263,39 @@ fastMRI+ holds 113 'Lacunar infarct' boxes, none in these 17 volumes. Deriving t
 from those boxes, and moving the bank's volumes to 27-200 mm^3 with 10 mm^3 retained as a
 sub-threshold control, would give a bank whose majority is detectable in the reference. Both are
 bank-parameter choices the pre-registration leaves to the addendum; `z_det` itself is unchanged.
+
+## 2026-09-09: Experiment 1 machinery, classical reconstructors (run `dryrun_classical`)
+
+DRY RUN, NOT A CONFIRMATORY RESULT. 714 pairs (119 lesions x 3 contrasts x
+2 reconstructors) on 15 annotated volumes, two central slices each, R = 8
+equispaced; both arms reconstructed, observers cross-fitted on the
+reconstructions, pre-registered erasure logic applied. 60 units, 2 h 14 min
+on 4 CPU workers; 18 sites skipped for lying outside the coil-map support.
+
+| | zero-filled | CG-SENSE |
+| --- | --- | --- |
+| `t_R` (measured transfer) | 0.769 | 0.999 |
+| `t_N` (null-space transfer) | 0.000 | 0.096 |
+| relative residual | 0.155 | 0.125 |
+| PSNR, lesion-absent arm | 27.4 dB | 17.5 dB |
+| lesion-present PSNR inside the lesion-free 95 % interval | 94 % of pairs | 94 % of pairs |
+| median / max PSNR change from the lesion | 0.000 / 0.020 dB | 0.000 / 0.023 dB |
+| detectability retained, median `z_recon / z_ref` where `z_ref` > 1, FLAIR / T1 | -0.07 / 0.69 | 0.27 / 0.52 |
+| ensemble `d'`, T1 27 mm^3 at contrast -1.0: reference 2.16 | 1.02 | 0.28 |
+| pairs passing the reference gate `z_ref >= z_det` | 0 of 357 | 0 of 357 |
+
+Reading.
+- The global score is blind to the lesion on real data: across 714 pairs the
+  lesion changes PSNR by at most 0.023 dB, the order predicted by the
+  companion review's identity for lesions of this size, and it stays inside
+  the lesion-free interval in 94 % of pairs for both reconstructors.
+- Both classical reconstructions lose most of the reference detectability at
+  R = 8, in the direction the theory predicts: zero-filling supplies nothing
+  in the null space (`t_N` = 0) and its measured transfer is 0.77 because the
+  adjoint is not data-consistent; CG-SENSE writes the measured part back
+  (`t_R` = 0.999) but at the noise-set lambda amplifies noise, which is why its
+  PSNR is 10 dB lower and its ROI contrast collapses.
+- No pair passes the reference gate, so the pre-registered erasure endpoint is
+  empty for the current bank: the amendment case, seen end to end.
+
+Figures: `outputs/annotated_val0/figures/dryrun_exp1_classical.png`.

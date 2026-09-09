@@ -104,6 +104,34 @@ def fig_explore(ex, z_det, out):
     fig.tight_layout(); fig.savefig(out, dpi=200); plt.close(fig)
 
 
+def fig_dryrun(df, z_det, z_miss, out):
+    """Classical dry run: detectability reference vs reconstruction, and PSNR change per pair."""
+    models = sorted(df.model.unique())
+    fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
+    ax = axes[0]
+    for m in models:
+        g = df[df.model == m].dropna(subset=["z_ref", "z_recon"])
+        ax.scatter(g.z_ref, g.z_recon, s=10, alpha=0.6, label=m)
+    lim = [min(df.z_ref.min(), df.z_recon.min()), max(df.z_ref.max(), df.z_recon.max())]
+    ax.plot(lim, lim, "k--", lw=1); ax.axvline(z_det, color="k", ls=":", lw=1); ax.axhline(z_miss, color="k", ls=":", lw=1)
+    ax.set_xlabel("$z_{ref}$ (fully sampled reference)"); ax.set_ylabel("$z_{recon}$ (reconstruction)"); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+    ax.set_title("per-lesion detectability (dotted: $z_{det}$, $z_{miss}$)", fontsize=9)
+    ax = axes[1]
+    for m in models:
+        g = df[df.model == m]
+        ax.hist(g.psnr_cf - g.psnr_factual, bins=40, alpha=0.6, label=m)
+    ax.set_xlabel("PSNR(lesion present) - PSNR(lesion absent), dB"); ax.set_ylabel("pairs"); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+    ax.set_title("what the global score sees of the lesion", fontsize=9)
+    ax = axes[2]
+    for m in models:
+        g = df[df.model == m]
+        ax.scatter(g.mu_lambda, g.t_N, s=10, alpha=0.6, label=m)
+    ax.set_xlabel(r"measured fraction $\mu_\lambda$"); ax.set_ylabel("null-space transfer $t_N$"); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+    ax.set_title("what the reconstruction supplied beyond the measurement", fontsize=9)
+    fig.suptitle("Experiment 1 machinery, classical reconstructors at R=8 (dry run; not a confirmatory result)", fontsize=9)
+    fig.tight_layout(); fig.savefig(out, dpi=200); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-dir", default="outputs/annotated_val0")
@@ -125,6 +153,10 @@ def main():
     pe = os.path.join(args.run_dir, "explore_reference_detectability.csv")
     if os.path.exists(pe):
         fig_explore(pd.read_csv(pe), z_det, os.path.join(out, "val_explore_reference_detectability.png"))
+    pd1 = os.path.join(args.run_dir, "exp1_dryrun_classical.csv")
+    if os.path.exists(pd1):
+        thr = yaml.safe_load(open(args.thresholds))
+        fig_dryrun(pd.read_csv(pd1), thr.get("z_det") or 3.0, thr.get("z_miss") or 2.0, os.path.join(out, "dryrun_exp1_classical.png"))
     print("figures written to", out, ":", sorted(os.listdir(out)))
 
 
