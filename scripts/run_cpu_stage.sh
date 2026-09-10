@@ -14,7 +14,7 @@ run(){ name="$1"; shift; log "=== $name: start"; python3 "$@" > "$OUT/logs/$name
 
 run 01_integrity scripts/01_integrity.py --data "$DATA" --out "$OUT/integrity.csv" || exit 1
 run 02_bank scripts/02_bank.py --data "$DATA" --middle-slices "${MIDDLE_SLICES:-6}" \
-    --default-contrasts "${DEFAULT_CONTRASTS:-0.3,0.6,1.0}" \
+    --default-contrasts "${DEFAULT_CONTRASTS:-0.3,0.6,1.0}" ${CONTRAST_LEVELS:+--contrast-levels "$CONTRAST_LEVELS"} \
     --stats-out "$OUT/appearance_stats.csv" --manifest-out "$OUT/bank_manifest.csv" || exit 1
 run 02b_characterize scripts/02b_characterize_bank.py --manifest "$OUT/bank_manifest.csv" --data "$DATA" \
     --out "$OUT/bank_characterization.csv" --patches-out "$OUT/reference_patches.npz" \

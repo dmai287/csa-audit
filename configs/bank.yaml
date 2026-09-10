@@ -1,7 +1,10 @@
 # Synthetic lesion bank (paper Section 4.1). Contrast levels are set per sequence
 # from the fastMRI+ interquartile range once the annotations are analysed.
-volumes_mm3: [1, 5, 10, 27]
-contrast_levels_per_sequence: null   # filled by scripts/02_bank.py from fastMRI+ statistics
+volumes_mm3: [10, 27, 64, 100, 200]   # amendment A1 (2026-09-10): 10 mm^3 is a sub-threshold control
+contrast_levels_per_sequence:        # amendment A1 (2026-09-10): fastMRI+ focal median as the subtle level,
+  AXFLAIR: [0.24, 1.0, 1.5]          # plus acute-like levels chosen so that most lesions >= 64 mm^3 are
+  AXT1: [-0.21, -0.6, -1.0]          # detectable in the fully sampled reference (docs/VALIDATION.md grid)
+  AXT2: [0.3, 0.6, 1.0]              # no fastMRI+ statistics for T2; defaults
 contrast_signs: {AXFLAIR: [+1], AXT2: [+1], AXT1: [-1], AXT1POST: [-1]}
 contrast_floor: 0.1          # bank never uses a smaller |contrast| than this
 min_focal_boxes: 10          # per sequence; below this the default levels are used and recorded as such

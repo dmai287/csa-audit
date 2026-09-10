@@ -5,6 +5,23 @@ frozen pre-registration must be recorded here with its reason.
 
 ## Unreleased
 
+### Amendment A1 to the lesion bank (2026-09-10) — DEVIATION from pre-registration v1
+
+Reason: the pre-registered bank (1 to 27 mm^3 at fastMRI+-derived contrasts)
+is 97 % undetectable in the fully sampled reference on 5 to 7.5 mm slices, so
+the erasure endpoint would be empty (docs/VALIDATION.md, 2026-09-09; the
+classical dry run confirmed 0 eligible pairs of 714). Change: volumes 10
+(sub-threshold control), 27, 64, 100, 200 mm^3; FLAIR contrasts 0.24 (fastMRI+
+focal median), 1.0, 1.5; T1 contrasts -0.21, -0.6, -1.0; insertion sites
+restricted to the ESPIRiT support. Unchanged: every threshold, the erasure
+definitions, the observer, the hypotheses and the analysis plan. Draft
+addendum for the authors in `prereg/addendum_v1_DRAFT.md`; not deposited.
+Decided by the authors ("do as you suggest", 2026-09-10) on the basis of the
+reference-detectability grid; 44 lacunar-infarct boxes measured from 13
+fastMRI+ files were found to be chronic, modest-contrast lesions and so could
+not supply acute-like levels on their own.
+
+
 ### First real-data validation (2026-09-08)
 
 The audit physics ran end to end on a genuine fastMRI brain multi-coil slice

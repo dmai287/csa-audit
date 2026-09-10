@@ -196,6 +196,9 @@ def main():
     ap.add_argument("--middle-slices", type=int, default=0, help="restrict to the central N slices per volume (0 = all)")
     ap.add_argument("--maps-cache", default="/Volumes/T9/fastMRI_brain/cache/maps",
                     help="if a cached ESPIRiT map exists for a slice, insertion sites are restricted to its support")
+    ap.add_argument("--contrast-levels", default="",
+                    help="force levels per sequence, e.g. 'AXFLAIR=0.24,1.0,1.5;AXT1=-0.21,-0.6,-1.0' "
+                         "(recorded as contrast_source=forced; use for a pre-registration amendment)")
     ap.add_argument("--default-contrasts", default="",
                     help="comma-separated contrast levels for sequences with no fastMRI+ statistics "
                          "(e.g. AXT2, which has no annotations); recorded as contrast_source=default")
@@ -238,6 +241,12 @@ def main():
         contrast_by_seq[seq] = levels
         contrast_source[seq] = source
         print(f"    -> bank contrast levels {levels} (sign {sign:+.0f}, floor {floor}, {source})")
+    if args.contrast_levels:
+        for item in args.contrast_levels.split(";"):
+            seq, levels = item.split("=")
+            contrast_by_seq[seq.strip()] = sorted(float(x) for x in levels.split(","))
+            contrast_source[seq.strip()] = "forced_amendment"
+        print(f"  forced contrast levels: { {k: v for k, v in contrast_by_seq.items() if contrast_source.get(k) == 'forced_amendment'} }")
     if args.default_contrasts:
         defaults = sorted(float(x) for x in args.default_contrasts.split(","))
         for stem in file_index:
