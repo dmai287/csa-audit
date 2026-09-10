@@ -340,3 +340,18 @@ confirmatory grid is proposed in the addendum draft as option A1a.
   that crop by default (`--metric-crop 320`; 0 restores the full grid). The
   classical dry run used the full grid; its PSNR-change result (max 0.023 dB)
   is unaffected in kind, since the lesion sits inside the crop.
+- **VarNet adapter** (`csa/recon/varnet.py`, released brain leaderboard
+  weights, CPU, 27 s per 640 x 320 slice): the network's last-cascade coil
+  images combined with the audit's ESPIRiT maps. First attempt combined with
+  the network's own maps, whose phase convention differs, and the residual
+  against the audit's operator came out at 1.09; with the audit's maps it is
+  below zero-filling. Deterministic across calls.
+
+  | R | residual: VarNet / zero-filled | PSNR (centre crop): VarNet / ZF | SSIM (crop): VarNet / ZF |
+  | --- | --- | --- | --- |
+  | 4 | 0.132 / 0.138 | 38.7 / 28.2 dB | 0.934 / 0.857 |
+  | 8 | 0.107 / 0.125 | 35.0 / 24.0 dB | 0.905 / 0.765 |
+
+  The network's own k-space residual on the sampled lines is 0.23 to 0.25:
+  its learned data-consistency term is soft, which is exactly what the
+  measured-transfer statistic `t_R` will register.

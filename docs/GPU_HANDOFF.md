@@ -71,10 +71,12 @@ host are excluded from training.
 
 ## 5. Adapter checks before any experiment
 
-- VarNet: `csa/recon/varnet.py` returns the SENSE-combined complex image from
-  the last cascade with the network's own maps. Check on a few slices that
-  `abs(adapter output)` tracks `adapter.public_magnitude(...)` (RSS) up to the
-  combination rule, and that the residual on sampled lines is small.
+- VarNet: `csa/recon/varnet.py` returns the last-cascade coil images
+  combined with the audit's ESPIRiT maps (not the network's own maps, whose
+  phase convention differs). Verified on the Mac against the released
+  checkpoint: residual below zero-filling, centre-crop PSNR 38.7 dB at R=4
+  (`docs/VALIDATION.md`). On the GPU, re-run that check on 3 slices as a
+  sanity test of the environment.
 - U-Net: `csa/recon/unet.py` reads the architecture from the checkpoint.
 - Diffusion: `csa/recon/diffusion.py` wraps the released `LangevinOptimizer`
   unchanged. Construct it with `repo_dir=third_party/csgm-mri-langevin`,

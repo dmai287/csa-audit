@@ -43,27 +43,34 @@ class VarNetReconstructor:
         self.model.load_state_dict(state)
         self.model.eval().to(self.device)
 
-    def _complex_image(self, y_masked: np.ndarray, mask: np.ndarray):
-        """Run the cascades and return the SENSE-combined complex image (H, W) as numpy."""
+    def last_cascade_coil_images(self, y_masked: np.ndarray, mask: np.ndarray):
+        """Run the cascades and return the network's multi-coil k-space and its coil images (C, H, W) complex."""
         torch, fastmri = self.torch, self.fastmri
         y = _to_torch_kspace(y_masked, torch).to(self.device)
         m = torch.from_numpy(np.asarray(mask, dtype=bool))
         m = (m.reshape(1, 1, 1, -1, 1) if m.ndim == 1 else m[None, None, :, :, None]).to(self.device)
         with torch.no_grad():
-            sens = self.model.sens_net(y, m)               # (1, C, H, W, 2)
+            sens = self.model.sens_net(y, m)               # (1, C, H, W, 2), the network's own maps
             kspace_pred = y.clone()
             for cascade in self.model.cascades:
                 kspace_pred = cascade(kspace_pred, y, m, sens)
             coil_imgs = fastmri.ifft2c(kspace_pred)           # (1, C, H, W, 2)
-            if self.output == "complex_sense":
-                combined = fastmri.complex_mul(coil_imgs, fastmri.complex_conj(sens)).sum(dim=1)  # (1, H, W, 2)
-            else:  # "rss_phase_of_first": magnitude by RSS, phase from the SENSE combination
-                combined = fastmri.complex_mul(coil_imgs, fastmri.complex_conj(sens)).sum(dim=1)
-                mag = fastmri.rss(fastmri.complex_abs(coil_imgs), dim=1)
-                ph = torch.atan2(combined[..., 1], combined[..., 0])
-                combined = torch.stack([mag * torch.cos(ph), mag * torch.sin(ph)], -1)
-        c = combined[0].cpu().numpy()
-        return (c[..., 0] + 1j * c[..., 1]).astype(np.complex128)
+        k = kspace_pred[0].cpu().numpy(); c = coil_imgs[0].cpu().numpy(); s_ = sens[0].cpu().numpy()
+        return ((k[..., 0] + 1j * k[..., 1]).astype(np.complex128), (c[..., 0] + 1j * c[..., 1]).astype(np.complex128),
+                (s_[..., 0] + 1j * s_[..., 1]).astype(np.complex128))
+
+    def _complex_image(self, y_masked: np.ndarray, mask: np.ndarray, maps: np.ndarray = None):
+        """SENSE-combine the network's coil images.
+
+        With `maps` given (the audit's ESPIRiT maps, the default through the
+        reconstructor interface) the combination is in the audit's phase
+        convention, so the result is consistent with the audit's forward
+        operator. Without them the network's own maps are used, which carry
+        a different phase convention and only the magnitude is comparable.
+        """
+        _, coil_imgs, sens = self.last_cascade_coil_images(y_masked, mask)
+        use = maps if (maps is not None and self.output == "complex_sense") else sens
+        return (np.conj(use) * coil_imgs).sum(axis=0)
 
     def public_magnitude(self, y_masked: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """The public VarNet output (RSS magnitude), for checking the adapter against the model as released."""
@@ -77,4 +84,4 @@ class VarNetReconstructor:
 
     def __call__(self, y_masked: np.ndarray, mask: np.ndarray, maps: np.ndarray, seed: int = 0) -> np.ndarray:
         self.torch.manual_seed(seed)   # VarNet is deterministic; the seed is kept for interface uniformity
-        return self._complex_image(y_masked, mask)
+        return self._complex_image(y_masked, mask, maps)
