@@ -53,12 +53,34 @@ margins, the multiplicity rule and the pilot design.
 
 ## Verification of the amended bank on the reference (to be filled)
 
-`outputs/annotated_val_A1/reference_detectability_check.csv`: fraction of
-planned lesions with `z_ref >= z_det`, by sequence, volume and contrast.
+`outputs/annotated_val_A1/reference_detectability_check.csv`, 115 slices of
+22 hosts, cross-fitted CHO, `z_det` = 3.0: fraction of planned lesions at or
+above `z_det` (median `z_ref`), thick slices as acquired.
 
-- FLAIR at 1.0 / 1.5: (fill from the check)
-- T1 at -0.6 / -1.0: (fill from the check)
-- Overall eligible fraction: (fill)
+| sequence, contrast | 10 mm^3 | 27 mm^3 | 64 mm^3 | 100 mm^3 | 200 mm^3 |
+|---|---|---|---|---|---|
+| AXFLAIR +0.24 | 0 % (z 0.3) | 3 % (z 0.4) | 5 % (z 0.5) | 3 % (z 0.5) | 3 % (z 0.7) |
+| AXFLAIR +1.00 | 15 % (z 1.6) | 26 % (z 2.1) | 35 % (z 2.6) | 46 % (z 2.9) | 63 % (z 3.4) |
+| AXFLAIR +1.50 | 38 % (z 2.6) | 57 % (z 3.2) | 76 % (z 4.0) | 79 % (z 4.5) | 85 % (z 5.1) |
+| AXT1 -0.21 | 2 % (z 0.6) | 1 % (z 0.8) | 1 % (z 0.8) | 0 % (z 0.7) | 0 % (z 0.8) |
+| AXT1 -0.60 | 4 % (z 1.4) | 5 % (z 1.7) | 5 % (z 1.8) | 3 % (z 1.6) | 7 % (z 1.7) |
+| AXT1 -1.00 | 27 % (z 2.3) | 44 % (z 2.8) | 41 % (z 2.8) | 30 % (z 2.6) | 44 % (z 2.8) |
+
+Expected eligible fraction: 25 % of planned insertions (FLAIR
+36 %, T1 14 %), against 3 % for the pre-registered bank.
+T1 does not reach a majority at any level, because -1.0 is already a signal
+void; this is a property of the thick-slice data and is stated as such.
+
+### Option A1a: a leaner confirmatory grid (for the authors to decide)
+
+The subtle strata (FLAIR 0.24, T1 -0.21) and the 10 mm^3 volume are almost
+entirely sub-threshold. Keeping every combination spends about 40 % of the
+GPU reconstruction budget on pairs that cannot enter the erasure endpoint.
+A1a keeps one sub-threshold contrast control (the subtle level at 100 mm^3
+only) and one sub-threshold volume control (10 mm^3 at the top level only),
+and runs the full contrast axis at 27, 64, 100 and 200 mm^3. The
+model-independent characterisation already computed for the full grid is
+unaffected either way.
 
 ## Realised sample size (to be filled after the pilot)
 

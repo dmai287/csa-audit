@@ -16,6 +16,9 @@ focal median), 1.0, 1.5; T1 contrasts -0.21, -0.6, -1.0; insertion sites
 restricted to the ESPIRiT support. Unchanged: every threshold, the erasure
 definitions, the observer, the hypotheses and the analysis plan. Draft
 addendum for the authors in `prereg/addendum_v1_DRAFT.md`; not deposited.
+Verified on the reference 2026-09-10: 25 % of planned insertions eligible
+(FLAIR 1.5 majority-eligible from 27 mm^3; T1 capped near 44 %); option A1a
+(leaner confirmatory grid) proposed in the draft.
 Decided by the authors ("do as you suggest", 2026-09-10) on the basis of the
 reference-detectability grid; 44 lacunar-infarct boxes measured from 13
 fastMRI+ files were found to be chronic, modest-contrast lesions and so could

@@ -299,3 +299,29 @@ Reading.
   empty for the current bank: the amendment case, seen end to end.
 
 Figures: `outputs/annotated_val0/figures/dryrun_exp1_classical.png`.
+
+## 2026-09-10: amended bank (A1) verified on the reference
+
+Patch-only check on 115 slices of 22 hosts (2,542 patches), cross-fitted CHO,
+pre-registered `z_det` = 3.0. Cells: fraction of planned lesions at or above
+`z_det` (median `z_ref` in brackets), thick slices as acquired.
+
+| sequence, contrast | 10 mm^3 | 27 mm^3 | 64 mm^3 | 100 mm^3 | 200 mm^3 |
+|---|---|---|---|---|---|
+| AXFLAIR +0.24 | 0 % (z 0.3) | 3 % (z 0.4) | 5 % (z 0.5) | 3 % (z 0.5) | 3 % (z 0.7) |
+| AXFLAIR +1.00 | 15 % (z 1.6) | 26 % (z 2.1) | 35 % (z 2.6) | 46 % (z 2.9) | 63 % (z 3.4) |
+| AXFLAIR +1.50 | 38 % (z 2.6) | 57 % (z 3.2) | 76 % (z 4.0) | 79 % (z 4.5) | 85 % (z 5.1) |
+| AXT1 -0.21 | 2 % (z 0.6) | 1 % (z 0.8) | 1 % (z 0.8) | 0 % (z 0.7) | 0 % (z 0.8) |
+| AXT1 -0.60 | 4 % (z 1.4) | 5 % (z 1.7) | 5 % (z 1.8) | 3 % (z 1.6) | 7 % (z 1.7) |
+| AXT1 -1.00 | 27 % (z 2.3) | 44 % (z 2.8) | 41 % (z 2.8) | 30 % (z 2.6) | 44 % (z 2.8) |
+
+Expected eligible fraction of planned insertions: 25 % overall
+(FLAIR 36 %, T1 14 %), about 429 of 1725,
+up from 3 % for the pre-registered bank. Reading: FLAIR at 1.5 is majority-
+eligible from 27 mm^3 up and FLAIR at 1.0 only at 200 mm^3; T1 is capped
+near 44 % at full hypointensity, a limit of thick slices rather than a
+parameter choice; the subtle strata (FLAIR 0.24, T1 -0.21) are sub-threshold
+as intended. Consequence for sizing: the erasure endpoint's denominator is
+the eligible pairs, so the pairs-per-cell rule applies to eligible pairs and
+the confirmatory bank should oversample the eligible cells. A leaner
+confirmatory grid is proposed in the addendum draft as option A1a.
