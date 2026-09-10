@@ -25,6 +25,9 @@ class ComplexUNetReconstructor:
         self.device = torch.device(device)
         self.model = Unet(in_chans=2, out_chans=2, chans=chans, num_pool_layers=num_pool_layers)
         state = torch.load(checkpoint, map_location="cpu")
+        if isinstance(state, dict) and "chans" in state:
+            chans, num_pool_layers = state["chans"], state["num_pool_layers"]
+            self.model = Unet(in_chans=2, out_chans=2, chans=chans, num_pool_layers=num_pool_layers)
         self.model.load_state_dict(state.get("state_dict", state))
         self.model.eval().to(self.device)
 
@@ -32,8 +35,10 @@ class ComplexUNetReconstructor:
         torch = self.torch
         torch.manual_seed(seed)
         zf = SenseOperator(maps, mask).adjoint(y_masked)
-        scale = np.abs(zf).max() or 1.0
+        scale = float(np.quantile(np.abs(zf), 0.99)) or 1.0
         x = torch.from_numpy(np.stack([zf.real, zf.imag], 0) / scale).float()[None].to(self.device)
+        H, W = x.shape[-2:]; ph, pw = (-H) % 16, (-W) % 16
+        x = torch.nn.functional.pad(x, (0, pw, 0, ph))
         with torch.no_grad():
-            out = self.model(x)[0].cpu().numpy() * scale
+            out = self.model(x)[0, :, :H, :W].cpu().numpy() * scale
         return (out[0] + 1j * out[1]).astype(np.complex128)

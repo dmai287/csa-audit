@@ -76,10 +76,14 @@ host are excluded from training.
   `abs(adapter output)` tracks `adapter.public_magnitude(...)` (RSS) up to the
   combination rule, and that the residual on sampled lines is small.
 - U-Net: `csa/recon/unet.py` reads the architecture from the checkpoint.
-- Diffusion: `csa/recon/diffusion.py` wraps the csgm-mri-langevin sampler;
-  see its docstring for what must match the released config
-  (`configs/file/brain_T2.yaml` in that repository). Same seed for both arms
-  of a pair (`seed` argument), replicates on the 10 % subsample only.
+- Diffusion: `csa/recon/diffusion.py` wraps the released `LangevinOptimizer`
+  unchanged. Construct it with `repo_dir=third_party/csgm-mri-langevin`,
+  `checkpoint=...checkpoint_100000.pth`, and `sequence` matching the host
+  (selects the released config: T2 -> 384 grid, FLAIR/T1 -> 320 grid).
+  First run: reconstruct 3 fully sampled slices at R=4 and check PSNR against
+  the reference is in the range the paper reports (Jalal et al 2021, brain);
+  time one reconstruction to size the budget. Same seed for both arms of a
+  pair (`seed`), replicates on the 10 % subsample only.
 
 ## 6. What to run, in order
 

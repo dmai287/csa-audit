@@ -1,10 +1,17 @@
 # Models under audit
 
-| Family | Implementation | Weights | Output | Status |
+| Family | Implementation | Weights | Output | Status (2026-09-10) |
 |---|---|---|---|---|
-| E2E-VarNet | `fastmri.models.VarNet` | downloaded 2026-09-08 to `/Volumes/T9/fastMRI_brain/checkpoints/varnet_brain_leaderboard_state_dict.pt` (114 MB, from `dl.fbaipublicfiles.com`, the official fastMRI leaderboard checkpoint; the fastmri.org leaderboard site itself is down post Meta-to-NYU handover, but this direct file host still serves the weights) | magnitude (RSS) by default; the audit needs the complex cascade output, so the adapter must expose it | weights in hand; adapter still needs the complex-output change before use |
-| Complex U-Net | `fastmri.models.Unet(in_chans=2, out_chans=2)` | none published; train on `train_batch_0` (already downloaded) | complex | training script to write (`scripts/train_unet_complex.py`) |
-| Diffusion | csgm-mri-langevin (Jalal et al 2021) | downloaded 2026-09-08 to `/Volumes/T9/fastMRI_brain/checkpoints/ncsnv2-mri-mvue/` (1.3 GB, from the repo's published Google Drive link); one unconditional NCSNv2 score model, used across contrasts via sampling config, not per-contrast checkpoints | complex | weights in hand; adapter is still a stub (`csa/recon/diffusion.py`) and the repo's sampler needs BART installed for sensitivity maps |
+| E2E-VarNet | `csa/recon/varnet.py` over `fastmri.models.VarNet` | brain leaderboard checkpoint (`dl.fbaipublicfiles.com`, 114 MB) | complex: last-cascade k-space, inverse FFT, SENSE combination with the network's own maps; `public_magnitude()` returns the released RSS output for comparison | adapter written; CPU check on a real slice in `docs/VALIDATION.md` |
+| Complex U-Net | `csa/recon/unet.py` over `fastmri.models.Unet(in_chans=2, out_chans=2)` | trained by `scripts/train_unet_complex.py` on train batch 0 (annotated slices and validation hosts excluded) | complex | training script written and CPU smoke-tested; ~1 GPU-day for the real model |
+| Diffusion | `csa/recon/diffusion.py` over csgm-mri-langevin's `LangevinOptimizer` (Jalal et al 2021) | `checkpoint_100000.pth` (NCSNv2 'mri-mvue', 1.5 GB, Google Drive link in the repo README) | complex, on the released model grid (readout FOV halved; phase-encode 384 for the T2 config, 320 for FLAIR/T1), mapped back to the native grid with the zero-filled reconstruction filling the readout margin | preprocessing and grid mapping unit-tested on real slices (MVUE round trip 0.999); the sampling call is GPU-only as released and untested here |
+
+Notes on the diffusion adapter: the released dataloader generates its
+undersampling mask over the padded phase-encode width; this adapter pads the
+native mask with zeros instead, so no line that was never acquired counts as
+measured. Both arms of a pair get the same `seed` immediately before
+sampling (common random numbers); replicate seeds run on the 10 % subsample
+only (`configs/confirmatory_A1b.yaml`).
 
 Rules: models are audited as released; no model is retrained on the lesion
 bank; no lesion-bearing slice enters any training or calibration step; both
