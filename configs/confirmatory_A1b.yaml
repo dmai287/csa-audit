@@ -1,0 +1,35 @@
+# Confirmatory grid A1b (recommended 2026-09-10; adopt or edit in the OSF addendum before the GPU run).
+# Everything here is a bank/design parameter. Thresholds, erasure definitions, observer and
+# analysis plan are in configs/thresholds.yaml and the pre-registration and are NOT changed here.
+bank:
+  volumes_mm3: [10, 27, 64, 100, 200]
+  contrast_levels: {AXFLAIR: [0.24, 1.0, 1.5], AXT1: [-0.21, -0.6, -1.0], AXT2: [0.3, 0.6, 1.0]}
+  sites_per_slice_volume: 1
+  sites_inside_espirit_support: true
+cells:                      # quota = fraction of host slices that carry the cell
+  full_quota:
+    - {sequence: AXFLAIR, contrasts: [1.0, 1.5], volumes_mm3: [27, 64, 100, 200]}
+    - {sequence: AXT1,    contrasts: [-1.0],     volumes_mm3: [27, 64, 100, 200]}
+  controls_quota_0.1:
+    - {sequence: AXFLAIR, contrasts: [0.24], volumes_mm3: [100]}
+    - {sequence: AXT1,    contrasts: [-0.21, -0.6], volumes_mm3: [100]}
+    - {sequence: AXFLAIR, contrasts: [1.5],  volumes_mm3: [10]}
+    - {sequence: AXT1,    contrasts: [-1.0], volumes_mm3: [10]}
+hypotheses:
+  H1_stratum: {volumes_mm3: [27, 64, 100], contrast_abs_min: 1.0, accelerations: [6, 8]}   # restated from "<= 10 mm^3" (deviation, see addendum)
+  report_per_sequence: true
+models: [e2e_varnet, unet_complex, diffusion_langevin]
+accelerations: [4, 6, 8]
+mask_types: [equispaced]        # random masks: secondary condition, Experiment 3 only
+seeds:
+  primary: 0
+  replicates: [1, 2]
+  replicate_fraction_of_pairs: 0.10   # seed-sensitivity analysis on a 10 % subsample (all models)
+diffusion:
+  r4_fraction_of_slices: 0.5          # the R=4 arm of the diffusion model on half the slices
+sizing:
+  pi0: 0.05
+  half_width: 0.02
+  rho: null                            # from the 20-subject pilot; then the realised N is posted as addendum 2
+  expected_h1_eligible_per_slice: 2.16 # from runs/annotated_val_A1/reference_detectability_check.csv
+  expected_slices_per_model_R: 443     # at rho = 0.10; recompute with the pilot rho

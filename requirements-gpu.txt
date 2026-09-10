@@ -1,0 +1,18 @@
+# GPU machine, Python 3.10 or 3.11, CUDA 11.8+ (pin to the wheels your driver supports)
+numpy>=1.24
+scipy>=1.10
+scikit-image>=0.21
+h5py>=3.8
+pandas>=2.0
+pyyaml>=6.0
+statsmodels>=0.14
+pyarrow>=12
+matplotlib>=3.7
+torch>=2.2
+torchvision
+fastmri>=0.3.0
+sigpy>=0.1.27
+pytest>=7
+# csgm-mri-langevin (Jalal et al 2021) is cloned separately; its requirements.txt adds
+# hydra-core, omegaconf, tqdm, ninja, opencv-python; BART is needed for its sensitivity maps
+# unless csa.physics.espirit (sigpy) is used instead, which the adapter does.

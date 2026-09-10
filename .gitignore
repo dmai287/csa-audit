@@ -33,3 +33,6 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
+
+# Curated run artefacts that another machine needs (small CSV/npz/png only); raw outputs/ stay ignored
+!runs/
