@@ -43,6 +43,16 @@ def roi_ssim(gt: np.ndarray, pred: np.ndarray, center, size: int, maxval: float 
     return float(structural_similarity(g, p, data_range=maxval, win_size=win))
 
 
+def center_crop(x: np.ndarray, size: int = 320) -> np.ndarray:
+    """fastMRI's evaluation crop: the central size x size region (brain challenge convention).
+    Global PSNR and SSIM are reported on this crop when `size` is set."""
+    x = np.asarray(x)
+    H, W = x.shape[-2:]
+    h, w = min(size, H), min(size, W)
+    r0, c0 = (H - h) // 2, (W - w) // 2
+    return x[..., r0:r0 + h, c0:c0 + w]
+
+
 def annulus(shape, center, r_in: float, r_out: float) -> np.ndarray:
     """Boolean annulus used as the local background for ROI CNR."""
     rr, cc = np.mgrid[0:shape[0], 0:shape[1]]

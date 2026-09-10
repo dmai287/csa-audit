@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from csa.audit.erasure import is_erased, within_central_interval  # noqa: E402
 from csa.lesion.insert import lesion_perturbation, soft_disc  # noqa: E402
-from csa.metrics.image import annulus, psnr, roi_cnr, roi_ssim, ssim  # noqa: E402
+from csa.metrics.image import annulus, center_crop, psnr, roi_cnr, roi_ssim, ssim  # noqa: E402
 from csa.nullspace.projectors import measurement_gain, null_filter, real_inner  # noqa: E402
 from csa.observer.cho import CHO, extract_roi, laguerre_gauss_channels, per_lesion_z  # noqa: E402
 from csa.physics.masks import default_center_fraction, equispaced_mask, random_mask  # noqa: E402
@@ -82,7 +82,8 @@ def process_unit(job):
     y = op.undersample(ks)
     Xh = rec(y, mask, maps, seed)
     res_fact = op.relative_residual(Xh, y)
-    psnr_fact, ssim_fact = psnr(X, Xh), ssim(X, Xh)
+    crop = (lambda a: center_crop(a, args["metric_crop"])) if args.get("metric_crop") else (lambda a: a)
+    psnr_fact, ssim_fact = psnr(crop(X), crop(Xh)), ssim(crop(X), crop(Xh))
     roi = args["roi"]
     rng = np.random.default_rng((hash((stem, sl, model, R)) % (2 ** 31)))
     char = {(int(c["site_row"]), int(c["site_col"]), float(c["volume_mm3"])): c for c in char_rows}
@@ -147,7 +148,8 @@ def process_unit(job):
                 "z_ref": float(c_info.get("z_ref", np.nan)) if "z_ref" in c_info else np.nan,
                 "residual_factual": res_fact, "residual_cf": op.relative_residual(Xh_cf, y_cf),
                 "t_R": float(t_R), "t_N": float(t_N),
-                "psnr_factual": psnr_fact, "psnr_cf": psnr(X_cf, Xh_cf), "ssim_factual": ssim_fact, "ssim_cf": ssim(X_cf, Xh_cf),
+                "psnr_factual": psnr_fact, "psnr_cf": psnr(crop(X_cf), crop(Xh_cf)), "ssim_factual": ssim_fact, "ssim_cf": ssim(crop(X_cf), crop(Xh_cf)),
+                "metric_crop": args.get("metric_crop") or 0,
                 "roi_cnr_cf": roi_cnr(Xh_cf, disc, ring) if ring.any() else np.nan,
                 "roi_cnr_ref": roi_cnr(X_cf, disc, ring) if ring.any() else np.nan,
                 "roi_ssim_cf": roi_ssim(X_cf, Xh_cf, site, roi),
@@ -252,6 +254,8 @@ def main():
     ap.add_argument("--roi", type=int, default=32)
     ap.add_argument("--extra-absent", type=int, default=6)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--metric-crop", type=int, default=320,
+                    help="global PSNR/SSIM on the central N x N crop as fastMRI reports them (0 = full grid)")
     ap.add_argument("--limit-units", type=int, default=0)
     ap.add_argument("--observer-only", action="store_true", help="skip pass 1; refit observers and erasure flags from saved rows and patches")
     args = ap.parse_args()
@@ -269,7 +273,7 @@ def main():
     char = pd.read_csv(args.characterization)
     files = {os.path.splitext(f)[0]: os.path.join(dp, f) for dp, _, fs in os.walk(args.data) for f in fs if f.endswith(".h5")}
     a = {"maps_cache": args.maps_cache, "cg_tol": args.cg_tol, "cg_maxiter": args.cg_maxiter, "roi": args.roi,
-         "extra_absent": args.extra_absent, "seed": args.seed}
+         "extra_absent": args.extra_absent, "seed": args.seed, "metric_crop": args.metric_crop}
     jobs, n_done = [], 0
     for stem, g_file in man.groupby("file"):
         if stem not in files:

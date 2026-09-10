@@ -325,3 +325,18 @@ as intended. Consequence for sizing: the erasure endpoint's denominator is
 the eligible pairs, so the pairs-per-cell rule applies to eligible pairs and
 the confirmatory bank should oversample the eligible cells. A leaner
 confirmatory grid is proposed in the addendum draft as option A1a.
+
+## 2026-09-10: model adapters checked on CPU before hand-off
+
+- **Complex U-Net training script**: one epoch on two real slices with
+  validation and checkpointing (CPU, 140 s); the adapter rebuilt the
+  architecture from the checkpoint and returned a finite complex image on a
+  real 12-coil slice. The real model is trained on the GPU machine.
+- **Global metrics convention**: fastMRI reports PSNR and SSIM on the central
+  320 x 320 crop, not the full 640 x 320 grid. On the full grid a
+  reconstruction that fills the empty readout margins differently from the
+  support-masked reference is penalised for nothing diagnostic, which the
+  VarNet check exposed. `scripts/04_exp1.py` now scores global PSNR/SSIM on
+  that crop by default (`--metric-crop 320`; 0 restores the full grid). The
+  classical dry run used the full grid; its PSNR-change result (max 0.023 dB)
+  is unaffected in kind, since the lesion sits inside the crop.

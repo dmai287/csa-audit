@@ -89,6 +89,13 @@ be computed once per (lesion, acquisition) and reused across models.
 - `02_bank.py` restricts insertion sites to the ESPIRiT support when a cached
   map exists (18 sites fell outside it in the dry run).
 
+### Changed (2026-09-10, hand-off)
+
+- Global PSNR/SSIM in `04_exp1.py` on the fastMRI 320 x 320 centre crop by
+  default (`--metric-crop`), matching how the field reports them.
+- `scripts/train_unet_complex.py` implemented and CPU smoke-tested;
+  `csa/recon/unet.py` reads the architecture from the checkpoint.
+
 ### Changed
 
 - `scripts/04_exp1.py` implemented: Algorithm 1 per pair for any reconstructor,
