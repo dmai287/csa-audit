@@ -16,9 +16,20 @@ cells:                      # quota = fraction of host slices that carry the cel
     - {sequence: AXFLAIR, contrasts: [1.5],  volumes_mm3: [10]}
     - {sequence: AXT1,    contrasts: [-1.0], volumes_mm3: [10]}
 hypotheses:
-  H1_stratum: {volumes_mm3: [27, 64, 100], contrast_abs_min: 1.0, accelerations: [6, 8]}   # restated from "<= 10 mm^3" (deviation, see addendum)
+  # A2: the endpoint is still the silent erasure rate; the test is a paired contrast
+  # against the no-prior baseline on the same lesions. pi0 is descriptive only.
+  H1:
+    endpoint: silent_erasure_rate
+    test: paired_contrast_vs_baseline
+    baseline_model: cg_sense_tuned
+    sided: two
+    alpha: 0.05
+    strata: [volume_mm3, contrast, acceleration, mu_lambda_tertile]
+    primary_stratum: {volumes_mm3: [27, 64, 100], contrast_abs_min: 1.0, accelerations: [6, 8]}
+    cleanest_attribution: {acceleration: 4}   # mu_lambda ~ 1, so a difference is the prior's
+    half_width_target_on_delta: 0.05
   report_per_sequence: true
-models: [e2e_varnet, unet_complex, diffusion_langevin]
+models: [e2e_varnet, unet_complex, diffusion_langevin, cg_sense_tuned]   # the fourth is the no-prior comparator (classical, cheap)
 accelerations: [4, 6, 8]
 mask_types: [equispaced]        # random masks: secondary condition, Experiment 3 only
 seeds:

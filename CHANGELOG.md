@@ -5,6 +5,29 @@ frozen pre-registration must be recorded here with its reason.
 
 ## Unreleased
 
+### Amendments A2 and A3 (2026-09-12, authors' decision)
+
+- **A2, H1's comparator.** The endpoint stays the silent erasure rate; the
+  test becomes a two-sided paired contrast against the no-prior baseline
+  (`cg_sense_tuned`) on the same lesions, acquisitions and seeds, reported
+  overall and at matched `mu_lambda`. `pi0` becomes a descriptive reference.
+  Reason: the classical audit showed a threshold test against `pi0` is
+  satisfied by the acquisition alone. Sizing targets a half-width of 0.05 on
+  the contrast, which is not more demanding than the original interval on a
+  single rate because the paired contrast of correlated rates has smaller
+  variance.
+- **A3, scope.** All claims are stated as being about focal structure of
+  specified size and contrast under a specified acquisition; the clinical
+  findings that motivate the work are named as motivation only. The bank's
+  conspicuous contrast levels are about four times the measured core contrast
+  of the fastMRI+ lacunar-infarct boxes, which are predominantly chronic, and
+  that extrapolation is now stated in the limitations.
+- Manuscript updated accordingly (Introduction, causal graph label, Case A
+  assumption, H1, statistical plan, limitations, conclusion note); 36 pages.
+  Drafts in `prereg/addendum_v1_DRAFT.md`; `configs/confirmatory_A1b.yaml`
+  carries the H1 specification and the baseline arm.
+
+
 ### Fixed (2026-09-11) — measurement correction, affects reported silent erasure
 
 Global PSNR and SSIM scored each arm of a pair against its own reference, so a

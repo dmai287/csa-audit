@@ -82,7 +82,7 @@ and runs the full contrast axis at 27, 64, 100 and 200 mm^3. The
 model-independent characterisation already computed for the full grid is
 unaffected either way.
 
-## Proposed restatement of H1 (for the authors; a hypothesis change, not a threshold change)
+## Amendment A2: H1's comparator (an endpoint's test, not the endpoint)
 
 The classical audit at R = 8 on the amended bank found erasure rates of 0.68
 (zero-filling) and 0.87 (CG-SENSE at the audit's noise-set lambda) among
@@ -91,16 +91,42 @@ eligible pairs, with no learned prior involved (`docs/VALIDATION.md`,
 `pi0` = 0.05 in at least one model family" — is therefore satisfied by the
 acquisition alone and carries no information about learned reconstruction.
 
-Proposed H1': at matched measured fraction `mu_lambda` and acceleration, the
-silent erasure rate of each learned reconstructor differs from that of the
-no-prior baseline (`cg_sense_tuned`), tested as a paired contrast on the same
-lesions with the cluster bootstrap, two-sided at the family-wise level already
-pre-registered. `pi0` is retained as a descriptive reference point, not as the
-test. The baseline becomes a fourth arm of Experiment 1 rather than context,
-which the compute budget already allows because it is classical.
+**The endpoint does not change.** It remains the silent erasure rate, defined
+exactly as pre-registered. What changes is the comparator:
 
-This is a change to a hypothesis and must be declared as such, with the reason
-(the baseline measurement above) and the date, before any confirmatory run.
+| | Pre-registered | Amended (A2) |
+| --- | --- | --- |
+| Endpoint | silent erasure rate | unchanged |
+| Test | one-sided against `pi0` = 0.05, per model | two-sided paired contrast against a no-prior baseline, per model |
+| Estimand | the rate | `Delta` = rate(model) - rate(baseline), same lesions, acquisitions and seeds |
+| `pi0` | the test | reported as a descriptive reference for clinical relevance |
+| Strata | volume, contrast, R | unchanged, plus the measured fraction `mu_lambda` |
+| Sizing | half-width 0.02 on a rate | half-width 0.05 on `Delta`; not more demanding, because a paired contrast of correlated rates has smaller variance than either rate |
+
+The comparator is the fourth arm added to Experiment 1: a Tikhonov-regularised
+sensitivity-encoded reconstruction at an image-quality-oriented regularisation
+level (`cg_sense_tuned`). Pairing removes everything the two arms share, so the
+contrast isolates the prior's contribution, which a threshold test cannot do
+once the acquisition is known to erase lesions on its own.
+
+Reporting at matched `mu_lambda` is part of the amendment: a lesion the
+acquisition barely records cannot be preserved by any method. R = 4, where
+`mu_lambda` is essentially one, is the condition in which a difference is most
+cleanly attributable to the prior, and the contrast is reported by R as well
+as pooled.
+
+## Amendment A3: scope of the claims
+
+No public raw-k-space benchmark contains acute infarction or haemorrhage, and
+the focal lesions annotated in fastMRI+ are predominantly chronic: the 113
+boxes labelled lacunar infarct have a measured core contrast of median
+magnitude near 0.2, against the bank's conspicuous levels of about four times
+that. Those levels are an assumption about how an acute lesion would appear,
+not a measurement of one. All claims are therefore stated as being about
+focal structure of specified size and contrast under a specified acquisition.
+The clinical findings that motivate the work are named as motivation only.
+This is a scope statement rather than a change of procedure, recorded here so
+that the limit is on the record before any confirmatory result exists.
 
 ## Realised sample size (to be filled after the pilot)
 
