@@ -5,6 +5,24 @@ frozen pre-registration must be recorded here with its reason.
 
 ## Unreleased
 
+### Fixed (2026-09-11) — measurement correction, affects reported silent erasure
+
+Global PSNR and SSIM scored each arm of a pair against its own reference, so a
+bright lesion raised the reference maximum and shifted the score by
+20 log10(max_cf / max_f) with no change in the error (worst case seen: 0.871 dB
+recorded against 0.0006 dB of real change). Both arms are now scored with
+`maxval` fixed to the lesion-absent reference; `tests/test_common_scale.py`
+pins it. Erasure rates are unaffected (observer only); silent erasure was
+understated. The affected table is quarantined under
+`outputs/annotated_val_A1/superseded_buggy_psnr/`.
+
+### Added
+
+- `cg_sense_tuned`: CG-SENSE at an image-quality-oriented lambda, the fair
+  no-prior baseline (the audit's noise-set lambda amplifies noise by ~10 dB
+  and inflates its erasure rate).
+
+
 ### Amendment A1 to the lesion bank (2026-09-10) — DEVIATION from pre-registration v1
 
 Reason: the pre-registered bank (1 to 27 mm^3 at fastMRI+-derived contrasts)

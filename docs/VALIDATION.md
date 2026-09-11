@@ -355,3 +355,82 @@ confirmatory grid is proposed in the addendum draft as option A1a.
   The network's own k-space residual on the sampled lines is 0.23 to 0.25:
   its learned data-consistency term is soft, which is exactly what the
   measured-transfer statistic `t_R` will register.
+
+## 2026-09-11: amended bank (A1) characterized and audited with classical reconstructors
+
+Run `annotated_val_A1`: 22 hosts, 115 slices, 575 lesions, 5,175
+characterization rows; the stage took 9 h on 4 CPU workers.
+
+### Measurement statistics (model-independent, mean over lesions)
+
+| Volume | `kappa^2` R=4 / 6 / 8 | `mu_lambda` R=4 / 6 / 8 |
+| --- | --- | --- |
+| 10 mm^3 | 0.43 / 0.32 / 0.23 | 0.96 / 0.76 / 0.64 |
+| 27 mm^3 | 0.50 / 0.37 / 0.27 | 0.96 / 0.79 / 0.67 |
+| 64 mm^3 | 0.58 / 0.44 / 0.32 | 0.98 / 0.83 / 0.72 |
+| 100 mm^3 | 0.63 / 0.49 / 0.36 | 0.98 / 0.85 / 0.74 |
+| 200 mm^3 | 0.71 / 0.56 / 0.42 | 0.98 / 0.87 / 0.78 |
+
+Monotone in volume and acceleration, as on the pre-amendment bank, and
+everywhere above the single-coil `1/R`.
+
+### Eligibility, measured on the full run
+
+18 % of planned lesions reach `z_det` on the fully sampled reference (FLAIR
+12 to 42 % by volume, T1 3 to 16 %), against 3 % for the pre-registered bank
+and the 25 % the patch-only check estimated. The patch check fits its
+observer on a pooled patch set; the full run cross-fits per slice unit, which
+is stricter. **Use 18 % for sizing, not 25 %.**
+
+### The classical audit at R=8, and what it means for H1
+
+Of 1,320 pairs, 378 were eligible. Among eligible pairs the **erasure rate
+was 0.87 for CG-SENSE at the noise-set lambda and 0.68 for zero-filling**
+(cluster-bootstrap intervals 0.79 to 0.94 and 0.62 to 0.73). Erasure depends
+only on the observer statistics and is unaffected by the metric bug below.
+
+Neither reconstructor has a learned prior. At R=8 the acquisition and the
+reconstruction's own noise destroy most lesions that the fully sampled
+reference makes detectable. Three consequences, all for the authors:
+
+1. **H1 as pre-registered is satisfied by physics alone.** "The silent
+   erasure rate exceeds `pi0` = 0.05 in at least one model family" is true of
+   zero-filling. A threshold test against a fixed `pi0` therefore carries no
+   information about learned priors.
+2. **The informative hypothesis is a comparison.** Whether a learned prior
+   erases *more or less* than the no-prior baseline at matched `mu_lambda` is
+   the question the audit is built to answer, and it needs the baseline as a
+   fourth arm rather than as context. A proposed restatement is in the
+   addendum draft.
+3. **The baseline must be a fair one.** CG-SENSE at the audit's noise-set
+   `lambda` enforces data consistency but amplifies noise (10 dB below
+   zero-filling), so its erasure rate is inflated. `cg_sense_tuned` (a larger,
+   image-quality-oriented `lambda`) was added for this purpose and is used in
+   the corrected run.
+
+### Correction: both arms must be scored on a common intensity scale
+
+PSNR and SSIM take their scale from the reference maximum. The counterfactual
+reference `X + ell` has a larger maximum whenever the lesion is bright, so
+scoring each arm against its own reference shifted the score by
+`20 log10(max_cf / max_f)` with no change in the error at all. On the worst
+case found (10 mm^3, contrast 1.0) the recorded change was 0.871 dB against
+an error-driven change of 0.0006 dB.
+
+Effect on results: erasure rates are unaffected (they use the observer only).
+Silent erasure was **understated**, because the artefact raises the
+lesion-present PSNR and pushes it out of the lesion-free interval. Global
+PSNR and SSIM are now computed with `maxval` fixed to the lesion-absent
+reference (`tests/test_common_scale.py` pins the convention). The affected
+table is kept under
+`outputs/annotated_val_A1/superseded_buggy_psnr/` and is not used.
+
+### The identity from the companion review, on real pairs
+
+With the common scale the measured `|dPSNR|` has median 0.0019 dB over 1,320
+pairs, and inverting `|dPSNR| = 10 log10(1 + f(r-1))` gives implied local
+error ratios `r` of 1.1 to 2.7, i.e. the reconstruction error inside the
+lesion is only slightly larger than outside. The identity's prediction at the
+bank's median volume fraction (`f` = 4.0e-4) is 0.016 dB at `r` = 10 and
+0.169 dB at `r` = 100, bracketing what is observed. This is the companion
+review's central claim measured on reconstructions rather than asserted.

@@ -66,7 +66,7 @@ above `z_det` (median `z_ref`), thick slices as acquired.
 | AXT1 -0.60 | 4 % (z 1.4) | 5 % (z 1.7) | 5 % (z 1.8) | 3 % (z 1.6) | 7 % (z 1.7) |
 | AXT1 -1.00 | 27 % (z 2.3) | 44 % (z 2.8) | 41 % (z 2.8) | 30 % (z 2.6) | 44 % (z 2.8) |
 
-Expected eligible fraction: 25 % of planned insertions (FLAIR
+Expected eligible fraction: 18 % of planned insertions measured on the full run (the patch-only check estimated 25 %; the full run cross-fits per slice unit and is stricter, so 18 % is the number to size with) (FLAIR
 36 %, T1 14 %), against 3 % for the pre-registered bank.
 T1 does not reach a majority at any level, because -1.0 is already a signal
 void; this is a property of the thick-slice data and is stated as such.
@@ -81,6 +81,26 @@ only) and one sub-threshold volume control (10 mm^3 at the top level only),
 and runs the full contrast axis at 27, 64, 100 and 200 mm^3. The
 model-independent characterisation already computed for the full grid is
 unaffected either way.
+
+## Proposed restatement of H1 (for the authors; a hypothesis change, not a threshold change)
+
+The classical audit at R = 8 on the amended bank found erasure rates of 0.68
+(zero-filling) and 0.87 (CG-SENSE at the audit's noise-set lambda) among
+eligible pairs, with no learned prior involved (`docs/VALIDATION.md`,
+2026-09-11). The pre-registered H1 — "the silent erasure rate exceeds
+`pi0` = 0.05 in at least one model family" — is therefore satisfied by the
+acquisition alone and carries no information about learned reconstruction.
+
+Proposed H1': at matched measured fraction `mu_lambda` and acceleration, the
+silent erasure rate of each learned reconstructor differs from that of the
+no-prior baseline (`cg_sense_tuned`), tested as a paired contrast on the same
+lesions with the cluster bootstrap, two-sided at the family-wise level already
+pre-registered. `pi0` is retained as a descriptive reference point, not as the
+test. The baseline becomes a fourth arm of Experiment 1 rather than context,
+which the compute budget already allows because it is classical.
+
+This is a change to a hypothesis and must be declared as such, with the reason
+(the baseline measurement above) and the date, before any confirmatory run.
 
 ## Realised sample size (to be filled after the pilot)
 

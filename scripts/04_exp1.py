@@ -46,7 +46,7 @@ from csa.physics.masks import default_center_fraction, equispaced_mask, random_m
 from csa.physics.operator import SenseOperator, ifft2c, sense_combine  # noqa: E402
 from csa.recon.base import CGSense, ZeroFilled  # noqa: E402
 
-LINEAR = {"zero_filled", "cg_sense"}
+LINEAR = {"zero_filled", "cg_sense", "cg_sense_tuned"}
 
 
 def git_commit():
@@ -57,10 +57,15 @@ def git_commit():
 
 
 def make_reconstructor(name, lam, cg_tol, cg_maxiter):
+    """`cg_sense` uses the audit's noise-set lambda, which enforces data consistency but
+    amplifies noise; `cg_sense_tuned` uses a larger, image-quality-oriented lambda and is
+    the fairer no-prior baseline for comparing against learned reconstructors."""
     if name == "zero_filled":
         return ZeroFilled()
     if name == "cg_sense":
         return CGSense(lam=lam, tol=cg_tol, maxiter=cg_maxiter)
+    if name == "cg_sense_tuned":
+        return CGSense(lam=max(lam * 30.0, 1e-2), tol=cg_tol, maxiter=cg_maxiter)
     raise ValueError(f"reconstructor '{name}' needs a GPU adapter; see docs/MODELS.md")
 
 
@@ -83,7 +88,14 @@ def process_unit(job):
     Xh = rec(y, mask, maps, seed)
     res_fact = op.relative_residual(Xh, y)
     crop = (lambda a: center_crop(a, args["metric_crop"])) if args.get("metric_crop") else (lambda a: a)
-    psnr_fact, ssim_fact = psnr(crop(X), crop(Xh)), ssim(crop(X), crop(Xh))
+    # Both arms must be scored on a common intensity scale. PSNR and SSIM take their
+    # scale from the reference maximum, and the counterfactual reference X + ell has a
+    # larger maximum whenever the lesion is bright, which shifts the score by
+    # 20 log10(max_cf / max_f) with no change in the error. Fixing maxval to the
+    # lesion-absent reference makes the two arms comparable, which is what the
+    # "does the global score see the lesion" question requires.
+    maxval = float(np.abs(crop(X)).max())
+    psnr_fact, ssim_fact = psnr(crop(X), crop(Xh), maxval=maxval), ssim(crop(X), crop(Xh), maxval=maxval)
     roi = args["roi"]
     rng = np.random.default_rng((hash((stem, sl, model, R)) % (2 ** 31)))
     char = {(int(c["site_row"]), int(c["site_col"]), float(c["volume_mm3"])): c for c in char_rows}
@@ -148,8 +160,10 @@ def process_unit(job):
                 "z_ref": float(c_info.get("z_ref", np.nan)) if "z_ref" in c_info else np.nan,
                 "residual_factual": res_fact, "residual_cf": op.relative_residual(Xh_cf, y_cf),
                 "t_R": float(t_R), "t_N": float(t_N),
-                "psnr_factual": psnr_fact, "psnr_cf": psnr(crop(X_cf), crop(Xh_cf)), "ssim_factual": ssim_fact, "ssim_cf": ssim(crop(X_cf), crop(Xh_cf)),
-                "metric_crop": args.get("metric_crop") or 0,
+                "psnr_factual": psnr_fact, "psnr_cf": psnr(crop(X_cf), crop(Xh_cf), maxval=maxval),
+                "ssim_factual": ssim_fact, "ssim_cf": ssim(crop(X_cf), crop(Xh_cf), maxval=maxval),
+                "metric_crop": args.get("metric_crop") or 0, "metric_maxval": maxval,
+                "maxval_ratio_cf_over_factual": float(np.abs(crop(X_cf)).max() / maxval),
                 "roi_cnr_cf": roi_cnr(Xh_cf, disc, ring) if ring.any() else np.nan,
                 "roi_cnr_ref": roi_cnr(X_cf, disc, ring) if ring.any() else np.nan,
                 "roi_ssim_cf": roi_ssim(X_cf, Xh_cf, site, roi),
