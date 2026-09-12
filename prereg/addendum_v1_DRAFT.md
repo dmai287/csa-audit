@@ -115,6 +115,26 @@ acquisition barely records cannot be preserved by any method. R = 4, where
 cleanly attributable to the prior, and the contrast is reported by R as well
 as pooled.
 
+## Amendment A2b: reporting strata (a reporting addition, not a test change)
+
+The classical audit across accelerations (`docs/VALIDATION.md`, 2026-09-12)
+showed that absolute erasure rates are governed by how far a lesion's
+reference detectability sits above `z_det`, because the pre-registered
+`z_det` = 3.0 and `z_miss` = 2.0 are a factor 1.5 apart while undersampling
+alone costs a factor 2.0 to 2.8 in detectability. Erasure rates for lesions in
+the band `z_ref` 3.0 to 3.5 ran at 66 to 89 %, against 24 to 41 % for `z_ref`
+above 6, under classical reconstruction with no prior at all.
+
+The paired contrast of A2 is unaffected, because the loss is common to both
+arms and cancels. What is added here is reporting: the contrast is reported
+stratified by `z_ref` band (3.0-3.5, 3.5-4.5, 4.5-6, above 6) as well as by
+`mu_lambda` and acceleration. No threshold, definition or test changes.
+
+A reference line is also fixed in advance: the tuned classical arm tracks the
+SNR-limited prediction `1/sqrt(R)` for detectability loss, so the confirmatory
+result is read as whether a learned prior recovers detectability beyond the
+SNR limit, rather than against an arbitrary rate.
+
 ## Amendment A3: scope of the claims
 
 No public raw-k-space benchmark contains acute infarction or haemorrhage, and

@@ -434,3 +434,71 @@ lesion is only slightly larger than outside. The identity's prediction at the
 bank's median volume fraction (`f` = 4.0e-4) is 0.016 dB at `r` = 10 and
 0.169 dB at `r` = 100, bracketing what is observed. This is the companion
 review's central claim measured on reconstructions rather than asserted.
+
+## 2026-09-12: classical audit across accelerations, corrected scale (run `classical_R468`)
+
+3,960 pairs on the amended bank, 22 hosts, two classical reconstructors at
+R = 4, 6 and 8; 1,134 pairs (29 %) eligible. This is the run that decides
+whether the confirmatory experiment will be interpretable.
+
+### Detectability falls at close to the SNR limit
+
+Median per-lesion detectability in the reconstruction, as a fraction of its
+value in the fully sampled reference:
+
+| Model | R=4 | R=6 | R=8 |
+| --- | --- | --- | --- |
+| CG-SENSE, tuned | 0.56 | 0.54 | 0.37 |
+| Zero-filled | 0.46 | 0.34 | 0.26 |
+| SNR-limited prediction `1/sqrt(R)` | 0.50 | 0.41 | 0.35 |
+
+The tuned baseline tracks `1/sqrt(R)`; zero-filling falls below it, as
+aliasing adds to the SNR loss. **The tuned classical reconstruction is
+therefore an SNR-limited reference, and the audit's real question becomes
+whether a learned prior recovers detectability beyond that limit.** That is a
+principled reference line, and a better one than any fixed rate.
+
+### Erasure rates are dominated by SNR loss, not by the prior
+
+| | R=4 | R=6 | R=8 |
+| --- | --- | --- | --- |
+| CG-SENSE tuned, erased (eligible pairs) | 0.40 | 0.39 | 0.60 |
+| Zero-filled, erased | 0.49 | 0.65 | 0.73 |
+
+At R = 4 the acquisition measures 99.5 % of the lesion, so nothing is missing
+for a prior to supply, and a good classical reconstruction still loses 40 % of
+eligible lesions. The cause is visible in the stratification by reference
+detectability: lesions just above threshold (`z_ref` 3.0 to 3.5) are erased in
+66 to 89 % of cases, those well above it (`z_ref` above 6) in 24 to 41 %.
+
+The mechanism is arithmetic. The pre-registered thresholds `z_det` = 3.0 and
+`z_miss` = 2.0 are a factor 1.5 apart, while undersampling alone costs a
+factor 2.0 to 2.8 in detectability. Any lesion near the detection threshold in
+the reference therefore falls below `z_miss` after undersampling, whatever
+reconstructs it. **An absolute erasure rate is consequently not a measurement
+of the prior**, which is precisely what amendment A2 anticipated; the thresholds
+themselves are untouched.
+
+### The paired contrast works, and pairing pays for itself
+
+Rehearsing A2's estimand on the two classical arms, paired on 567 lesions: the
+tuned baseline erases 12.2 percentage points fewer lesions than zero-filling.
+Pairing reduces the standard error by a factor 1.43 relative to comparing two
+independent rates, which is the assumption the sizing argument rests on,
+now measured rather than asserted.
+
+### PSNR blindness, on the corrected common scale
+
+Across 3,960 pairs the lesion changes global PSNR by a median of
+0.0048 dB and never by more than 0.31 dB. Among the 593 silently erased
+pairs the median is 0.0053 dB and the maximum 0.22 dB. The global score does
+not see the lesion, including when it is lost.
+
+### Consequences for the confirmatory run
+
+1. Report the paired contrast as the primary result (A2), not absolute rates.
+2. Stratify by reference detectability `z_ref` as well as by `mu_lambda`: the
+   band 3.0 to 3.5 behaves very differently from 6 and above, and pooling them
+   hides the effect.
+3. Carry `1/sqrt(R)` and the tuned classical arm as the SNR-limited reference
+   line against which a prior's contribution is judged.
